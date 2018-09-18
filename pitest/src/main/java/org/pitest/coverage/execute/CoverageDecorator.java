@@ -32,7 +32,7 @@ public class CoverageDecorator extends TestUnitDecorator {
   private final CoverageReceiver invokeQueue;
   private final ThreadMXBean     threads = ManagementFactory.getThreadMXBean();
 
-  protected CoverageDecorator(final CoverageReceiver queue, final TestUnit child) {
+  public CoverageDecorator(final CoverageReceiver queue, final TestUnit child) {
     super(child);
     this.invokeQueue = queue;
   }

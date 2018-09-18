@@ -16,17 +16,27 @@ package org.pitest.mutationtest.execute;
 
 import static org.pitest.util.Unchecked.translateCheckedException;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.pitest.classinfo.ClassName;
+import org.pitest.coverage.BlockLocation;
+import org.pitest.coverage.CoverageReceiver;
+import org.pitest.coverage.execute.CoverageDecorator;
+import org.pitest.coverage.execute.CoverageOptions;
+import org.pitest.coverage.execute.CoveragePipe;
 import org.pitest.functional.F3;
+import org.pitest.functional.SideEffect1;
 import org.pitest.mutationtest.DetectionStatus;
 import org.pitest.mutationtest.MutationStatusTestPair;
 import org.pitest.mutationtest.engine.Mutant;
@@ -42,7 +52,11 @@ import org.pitest.testapi.execute.MultipleTestGroup;
 import org.pitest.testapi.execute.Pitest;
 import org.pitest.testapi.execute.containers.ConcreteResultCollector;
 import org.pitest.testapi.execute.containers.UnContainer;
+import org.pitest.util.Id;
 import org.pitest.util.Log;
+import org.pitest.util.ReceiveStrategy;
+import org.pitest.util.SafeDataInputStream;
+import org.pitest.util.SafeDataOutputStream;
 
 public class MutationTestWorker {
 
@@ -57,6 +71,11 @@ public class MutationTestWorker {
   private final ClassLoader                                 loader;
   private final F3<ClassName, ClassLoader, byte[], Boolean> hotswap;
   private final boolean                                     fullMutationMatrix;
+  private final CoveragePipe                                invokeQueue;
+  private final Socket                                      covSocket;
+  private final ReceiveStrategy                             covReceive;
+  private final ConcurrentHashMap<String, Collection<BlockLocation>> covMapping;
+  private final CoverageOptions                             covOpts;
 
   public MutationTestWorker(
       final F3<ClassName, ClassLoader, byte[], Boolean> hotswap,
@@ -65,6 +84,29 @@ public class MutationTestWorker {
     this.mutater = mutater;
     this.hotswap = hotswap;
     this.fullMutationMatrix = fullMutationMatrix;
+    this.invokeQueue = null;
+    this.covSocket = null;
+    this.covReceive = null;
+    this.covMapping = null;
+    this.covOpts = null;
+  }
+
+  public MutationTestWorker(
+      final F3<ClassName, ClassLoader, byte[], Boolean> hotswap,
+      final Mutater mutater, final ClassLoader loader, final boolean fullMutationMatrix,
+      final CoveragePipe invokeQueue, final Socket covSocket,
+      final ReceiveStrategy covReceive,
+      final ConcurrentHashMap<String, Collection<BlockLocation>> covMapping,
+      final CoverageOptions covOpts) {
+    this.loader = loader;
+    this.mutater = mutater;
+    this.hotswap = hotswap;
+    this.fullMutationMatrix = fullMutationMatrix;
+    this.invokeQueue = invokeQueue;
+    this.covSocket = covSocket;
+    this.covReceive = covReceive;
+    this.covMapping = covMapping;
+    this.covOpts = covOpts;
   }
 
   protected void run(final Collection<MutationDetails> range, final Reporter r,
@@ -181,14 +223,40 @@ public class MutationTestWorker {
   private MutationStatusTestPair doTestsDetectMutation(final Container c,
       final List<TestUnit> tests) {
     try {
+      // Wrap the tests in coverage decorator to collect coverage
+      final List<TestUnit> covtests = decorateForCoverage(tests, this.invokeQueue);
+      //final List<TestUnit> covtests = tests;
+
       final CheckTestHasFailedResultListener listener = new CheckTestHasFailedResultListener(fullMutationMatrix);
 
       final Pitest pit = new Pitest(listener);
+
+      // Send some information over the socket to start (?)
+      OutputStream os = this.covSocket.getOutputStream();
+      SafeDataOutputStream dos = new SafeDataOutputStream(os);
+      // Copying stuff from SendData
+      SideEffect1<SafeDataOutputStream> sendInitialData = new SideEffect1<SafeDataOutputStream>() {
+        @Override
+        public void apply(final SafeDataOutputStream dos) {
+          dos.write(covOpts);
+          dos.flush();
+          List<String> testClasses = new ArrayList<String>();
+          for (TestUnit tu : tests) {
+            testClasses.add(tu.getDescription().getQualifiedName());
+          }
+          dos.writeInt(testClasses.size());
+          for (final String tc : testClasses) {
+            dos.writeString(tc);
+          }
+          dos.flush();
+        }
+      };
+      sendInitialData.apply(dos);
       
       if (this.fullMutationMatrix) {
-        pit.run(c, tests);
+        pit.run(c, covtests);
       } else {
-        pit.run(c, createEarlyExitTestGroup(tests));
+        pit.run(c, createEarlyExitTestGroup(covtests));
       }
 
       return createStatusTestPair(listener);
@@ -205,12 +273,45 @@ public class MutationTestWorker {
     List<String> succeedingTests = listener.getSucceedingTests().stream()
         .map(description -> description.getQualifiedName()).collect(Collectors.toList());
 
+    // Receive coverage results
+    //receiveResults();
+    LOG.fine("AWSHI2 RESULTS?");
+    for (String key : covMapping.keySet()) {
+        LOG.fine("AWSHI2 KEY " + key + " -> " + covMapping.get(key));
+    }
+
     return new MutationStatusTestPair(listener.getNumberOfTestsRun(),
         listener.status(), failingTests, succeedingTests);
   }
 
   private List<TestUnit> createEarlyExitTestGroup(final List<TestUnit> tests) {
     return Collections.<TestUnit> singletonList(new MultipleTestGroup(tests));
+  }
+
+  // Copied from CoverageWorker
+  private List<TestUnit> decorateForCoverage(final List<TestUnit> plainTests,
+      final CoverageReceiver queue) {
+    final List<TestUnit> decorated = new ArrayList<>(plainTests.size());
+    for (final TestUnit each : plainTests) {
+      decorated.add(new CoverageDecorator(queue, each));
+    }
+    return decorated;
+  }
+
+  // Copied code from SocketReadingCallable, duplicate for coverage collection
+  private void receiveResults() {
+    try {
+      SafeDataInputStream is = new SafeDataInputStream(new BufferedInputStream(this.covSocket.getInputStream()));
+      LOG.fine("AWSHI2 BEFORE control");
+      byte control = is.readByte();
+      LOG.fine("AWSHI2 AFTER control");
+      while (control != Id.DONE) {
+        this.covReceive.apply(control, is);
+        control = is.readByte();
+      }
+    } catch (IOException ex) {
+      // What to do?
+    }
   }
 
 }
