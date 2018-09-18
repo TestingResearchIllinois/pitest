@@ -67,6 +67,7 @@ public class RemoveSwitchMutator implements MethodMutatorFactory {
         final Label defaultLabel, final Label... labels) {
       if ((labels.length > RemoveSwitchMutator.this.key) && shouldMutate()) {
         final Label[] newLabels = labels.clone();
+        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/pitest/mutationtest/MutantCoverageRuntime", "logMutantHit", "()V", false);
         newLabels[RemoveSwitchMutator.this.key] = defaultLabel;
         super.visitTableSwitchInsn(i, i1, defaultLabel, newLabels);
       } else {
@@ -79,6 +80,7 @@ public class RemoveSwitchMutator implements MethodMutatorFactory {
         final int[] ints, final Label[] labels) {
       if ((labels.length > RemoveSwitchMutator.this.key) && shouldMutate()) {
         final Label[] newLabels = labels.clone();
+        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/pitest/mutationtest/MutantCoverageRuntime", "logMutantHit", "()V", false);
         newLabels[RemoveSwitchMutator.this.key] = defaultLabel;
         super.visitLookupSwitchInsn(defaultLabel, ints, newLabels);
       } else {

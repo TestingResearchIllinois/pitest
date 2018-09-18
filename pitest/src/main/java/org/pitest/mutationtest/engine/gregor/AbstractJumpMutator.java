@@ -65,6 +65,7 @@ public abstract class AbstractJumpMutator extends MethodVisitor {
         this.factory, substitution.description);
 
     if (this.context.shouldMutate(newId)) {
+      this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/pitest/mutationtest/MutantCoverageRuntime", "logMutantHit", "()V", false);
       this.mv.visitJumpInsn(substitution.newCode, label);
     } else {
       this.mv.visitJumpInsn(opcode, label);

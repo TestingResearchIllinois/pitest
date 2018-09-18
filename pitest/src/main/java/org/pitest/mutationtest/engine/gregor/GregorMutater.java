@@ -58,7 +58,7 @@ public class GregorMutater implements Mutater {
 
   @Override
   public List<MutationDetails> findMutations(
-      final ClassName classToMutate) {
+          final ClassName classToMutate) {
 
     final ClassContext context = new ClassContext();
     context.setTargetMutation(Optional.<MutationIdentifier> empty());

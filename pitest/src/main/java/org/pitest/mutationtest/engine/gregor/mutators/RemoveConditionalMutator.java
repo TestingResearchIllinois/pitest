@@ -93,6 +93,7 @@ public class RemoveConditionalMutator implements MethodMutatorFactory {
             this.factory, this.description);
 
         if (this.context.shouldMutate(newId)) {
+          this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/pitest/mutationtest/MutantCoverageRuntime", "logMutantHit", "()V", false);
           emptyStack(opcode);
           if (!RemoveConditionalMutator.this.replaceWith) {
             super.visitJumpInsn(Opcodes.GOTO, label);

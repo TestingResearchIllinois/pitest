@@ -60,6 +60,7 @@ class IncrementsMethodVisitor extends MethodVisitor {
         this.factory, "Changed increment from " + increment + " to "
             + -increment);
     if (this.context.shouldMutate(newId)) {
+      this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/pitest/mutationtest/MutantCoverageRuntime", "logMutantHit", "()V", false);
       this.mv.visitIincInsn(var, -increment);
     } else {
       this.mv.visitIincInsn(var, increment);

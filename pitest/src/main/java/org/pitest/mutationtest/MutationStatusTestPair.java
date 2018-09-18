@@ -15,12 +15,7 @@
 package org.pitest.mutationtest;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 public final class MutationStatusTestPair implements Serializable {
 
@@ -30,6 +25,7 @@ public final class MutationStatusTestPair implements Serializable {
   private final DetectionStatus status;
   private final List<String>    killingTests;
   private final List<String>    succeedingTests;
+  private final List<String>    coveringTests;
 
   public MutationStatusTestPair(final int numberOfTestsRun,
       final DetectionStatus status) {
@@ -39,16 +35,17 @@ public final class MutationStatusTestPair implements Serializable {
   public MutationStatusTestPair(final int numberOfTestsRun,
       final DetectionStatus status, final String killingTest) {
     this(numberOfTestsRun, status, killingTestToList(killingTest),
-      Collections.emptyList());
+      Collections.emptyList(), Collections.emptyList());
   }
 
   public MutationStatusTestPair(final int numberOfTestsRun,
-      final DetectionStatus status, final List<String> killingTests,
-      final List<String> succeedingTests) {
+                                final DetectionStatus status, final List<String> killingTests,
+                                final List<String> succeedingTests, final List<String> coveringTests) {
     this.status = status;
     this.killingTests = killingTests;
     this.succeedingTests = succeedingTests;
     this.numberOfTestsRun = numberOfTestsRun;
+    this.coveringTests = coveringTests;
   }
   
   private static List<String> killingTestToList(String killingTest) {
@@ -79,6 +76,10 @@ public final class MutationStatusTestPair implements Serializable {
    */
   public List<String> getKillingTests() {
     return killingTests;
+  }
+
+  public List<String> getCoveringTests() {
+    return coveringTests;
   }
 
   /** Get all succeeding tests.

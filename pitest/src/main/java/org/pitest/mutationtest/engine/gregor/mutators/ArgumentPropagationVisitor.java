@@ -52,6 +52,7 @@ class ArgumentPropagationVisitor extends MethodVisitor {
           this.factory, "replaced call to " + owner + "::" + name
           + " with argument");
       if (this.context.shouldMutate(newId)) {
+        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/pitest/mutationtest/MutantCoverageRuntime", "logMutantHit", "()V", false);
         final Type returnType = Type.getReturnType(desc);
         replaceMethodCallWithArgumentHavingSameTypeAsReturnValue(
             Type.getArgumentTypes(desc), returnType, opcode);

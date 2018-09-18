@@ -16,6 +16,8 @@ package org.pitest.testapi.execute.containers;
 
 import java.util.Collection;
 
+import org.pitest.mutationtest.MutantCoverageRuntime;
+import org.pitest.mutationtest.engine.Mutant;
 import org.pitest.testapi.Description;
 import org.pitest.testapi.ResultCollector;
 import org.pitest.testapi.TestResult;
@@ -31,6 +33,7 @@ public final class ConcreteResultCollector implements ResultCollector {
 
   @Override
   public void notifyStart(final Description tu) {
+    MutantCoverageRuntime.isHit = false;
     put(new TestResult(tu, null, TestUnitState.STARTED));
   }
 
@@ -41,12 +44,12 @@ public final class ConcreteResultCollector implements ResultCollector {
 
   @Override
   public void notifyEnd(final Description description, final Throwable t) {
-    put(new TestResult(description, t));
+    put(new TestResult(description, t, MutantCoverageRuntime.isHit));
   }
 
   @Override
   public void notifyEnd(final Description description) {
-    put(new TestResult(description, null));
+    put(new TestResult(description, null, MutantCoverageRuntime.isHit));
   }
 
   private void put(final TestResult tr) {

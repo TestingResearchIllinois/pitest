@@ -76,7 +76,10 @@ public class MemberVariableMutator implements MethodMutatorFactory {
       final MutationIdentifier mutationId = this.context.registerMutation(
           MemberVariableMutator.this, "Removed assignment to member variable "
               + fieldName);
-      return this.context.shouldMutate(mutationId);
+      boolean ret = this.context.shouldMutate(mutationId);
+      if (ret)
+        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/pitest/mutationtest/MutantCoverageRuntime", "logMutantHit", "()V", false);
+      return ret;
     }
 
   }

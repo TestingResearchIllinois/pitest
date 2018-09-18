@@ -92,7 +92,7 @@ public class IncrementalAnalyser implements MutationAnalyser {
     if ((mutationStatusTestPair.getStatus() == DetectionStatus.KILLED)
         && killingTestHasNotChanged(each, mutationStatusTestPair)) {
       return makeResult(each, DetectionStatus.KILLED, mutationStatusTestPair
-          .getKillingTests(), mutationStatusTestPair.getSucceedingTests());
+          .getKillingTests(), mutationStatusTestPair.getSucceedingTests(), mutationStatusTestPair.getCoveringTests());
     }
 
     if ((mutationStatusTestPair.getStatus() == DetectionStatus.SURVIVED)
@@ -132,15 +132,15 @@ public class IncrementalAnalyser implements MutationAnalyser {
 
   private MutationResult makeResult(final MutationDetails each,
       final DetectionStatus status) {
-    return makeResult(each, status, Collections.emptyList(), Collections.emptyList());
+    return makeResult(each, status, Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
   }
 
   private MutationResult makeResult(final MutationDetails each,
       final DetectionStatus status, final List<String> killingTests,
-      final List<String> succeedingTests) {
+      final List<String> succeedingTests, final List<String> coveringTests) {
     updatePreanalysedTotal(status);
     return new MutationResult(each, new MutationStatusTestPair(0, status,
-        killingTests, succeedingTests));
+        killingTests, succeedingTests, coveringTests));
   }
 
   private void updatePreanalysedTotal(final DetectionStatus status) {

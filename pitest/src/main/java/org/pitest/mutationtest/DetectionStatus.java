@@ -64,8 +64,22 @@ public enum DetectionStatus {
 
   /**
    * Mutation is not covered by any test.
+   * This is based on whether a hypothetical mutant would be covered by tests given the coverage
+   * at the start of the run - NOT indicating if the mutant was or was not actually covered when
+   * it was killed.
    */
-  NO_COVERAGE(false);
+  NO_COVERAGE(false),
+
+  /**
+   * Mutation should have been covered by this test, and the test failed with the mutant,
+   * but the mutant was not covered on that run.
+   */
+  KILLED_NOT_COVERED(false),
+
+  /**
+   * Mutation should have been covered by this test, but when we ran the mutant it was not.
+   */
+  SURVIVED_NOT_COVERED(false);
 
   private final boolean detected;
 

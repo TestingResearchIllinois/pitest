@@ -57,6 +57,7 @@ public abstract class AbstractInsnMutator extends MethodVisitor {
         this.factory, mutation.decribe(opcode, this.methodInfo));
 
     if (this.context.shouldMutate(newId)) {
+      this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/pitest/mutationtest/MutantCoverageRuntime", "logMutantHit", "()V", false);
       mutation.apply(opcode, this.mv);
     } else {
       applyUnmutatedInstruction(opcode);

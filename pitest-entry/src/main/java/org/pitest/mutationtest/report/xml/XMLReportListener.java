@@ -14,20 +14,6 @@
  */
 package org.pitest.mutationtest.report.xml;
 
-import static org.pitest.mutationtest.report.xml.Tag.block;
-import static org.pitest.mutationtest.report.xml.Tag.description;
-import static org.pitest.mutationtest.report.xml.Tag.index;
-import static org.pitest.mutationtest.report.xml.Tag.killingTest;
-import static org.pitest.mutationtest.report.xml.Tag.killingTests;
-import static org.pitest.mutationtest.report.xml.Tag.lineNumber;
-import static org.pitest.mutationtest.report.xml.Tag.methodDescription;
-import static org.pitest.mutationtest.report.xml.Tag.mutatedClass;
-import static org.pitest.mutationtest.report.xml.Tag.mutatedMethod;
-import static org.pitest.mutationtest.report.xml.Tag.mutation;
-import static org.pitest.mutationtest.report.xml.Tag.mutator;
-import static org.pitest.mutationtest.report.xml.Tag.sourceFile;
-import static org.pitest.mutationtest.report.xml.Tag.succeedingTests;
-
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
@@ -41,8 +27,10 @@ import org.pitest.util.ResultOutputStrategy;
 import org.pitest.util.StringUtil;
 import org.pitest.util.Unchecked;
 
+import static org.pitest.mutationtest.report.xml.Tag.*;
+
 enum Tag {
-  mutation, sourceFile, mutatedClass, mutatedMethod, methodDescription, lineNumber, mutator, index, killingTest, killingTests, succeedingTests, description, block;
+  mutation, sourceFile, mutatedClass, mutatedMethod, methodDescription, lineNumber, mutator, index, killingTest, killingTests, coveringTests, succeedingTests, description, block;
 }
 
 public class XMLReportListener implements MutationResultListener {
@@ -93,6 +81,8 @@ public class XMLReportListener implements MutationResultListener {
             createKillingTestDesc(mutation.getKillingTest()), killingTest)
         + makeNodeWhenConditionSatisfied(fullMutationMatrix,
             createTestDesc(mutation.getKillingTests()), killingTests)
+        + makeNodeWhenConditionSatisfied(fullMutationMatrix,
+            createTestDesc(mutation.getCoveringTests()), coveringTests)
         + makeNodeWhenConditionSatisfied(fullMutationMatrix,
             createTestDesc(mutation.getSucceedingTests()), succeedingTests)
         + makeNode(clean(details.getDescription()), description);

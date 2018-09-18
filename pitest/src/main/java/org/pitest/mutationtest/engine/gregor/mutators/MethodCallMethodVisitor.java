@@ -77,6 +77,7 @@ class MethodCallMethodVisitor extends MethodVisitor {
           this.factory, "removed call to " + owner + "::" + name);
 
       if (this.context.shouldMutate(newId)) {
+        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/pitest/mutationtest/MutantCoverageRuntime", "logMutantHit", "()V", false);
 
         popStack(desc, name);
         popThisIfNotStatic(opcode);

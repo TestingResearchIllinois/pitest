@@ -17,10 +17,7 @@ package org.pitest.mutationtest.execute;
 import static org.pitest.util.Unchecked.translateCheckedException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -205,8 +202,10 @@ public class MutationTestWorker {
     List<String> succeedingTests = listener.getSucceedingTests().stream()
         .map(description -> description.getQualifiedName()).collect(Collectors.toList());
 
+    List<String> coveringTests = listener.getCoveringTests().stream()
+            .map(description -> description.getQualifiedName()).collect(Collectors.toList());
     return new MutationStatusTestPair(listener.getNumberOfTestsRun(),
-        listener.status(), failingTests, succeedingTests);
+        listener.status(), failingTests, succeedingTests, coveringTests);
   }
 
   private List<TestUnit> createEarlyExitTestGroup(final List<TestUnit> tests) {

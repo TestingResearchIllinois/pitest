@@ -59,6 +59,7 @@ class RemoveIncrementsMethodVisitor extends MethodVisitor {
     final MutationIdentifier newId = this.context.registerMutation(
         this.factory, "Removed increment " + increment);
     if (this.context.shouldMutate(newId)) {
+      this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/pitest/mutationtest/MutantCoverageRuntime", "logMutantHit", "()V", false);
       this.mv.visitInsn(Opcodes.NOP);
     } else {
       this.mv.visitIincInsn(var, increment);

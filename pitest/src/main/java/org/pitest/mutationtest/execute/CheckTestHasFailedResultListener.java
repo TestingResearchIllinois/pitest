@@ -15,14 +15,18 @@
 package org.pitest.mutationtest.execute;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import org.pitest.mutationtest.DetectionStatus;
+import org.pitest.mutationtest.MutantCoverageRuntime;
+import org.pitest.mutationtest.engine.Mutant;
 import org.pitest.testapi.Description;
 import org.pitest.testapi.TestListener;
 import org.pitest.testapi.TestResult;
 
 public class CheckTestHasFailedResultListener implements TestListener {
 
+  private final List<Description> coveringTests = new ArrayList<>();
   private final List<Description>   succeedingTests = new ArrayList<>();
   private final List<Description>   failingTests = new ArrayList<>();
   private final boolean       recordPassingTests;
@@ -34,6 +38,9 @@ public class CheckTestHasFailedResultListener implements TestListener {
 
   @Override
   public void onTestFailure(final TestResult tr) {
+    if (tr.isWasMutantHit()) {
+      coveringTests.add(tr.getDescription());
+    }
     this.failingTests.add(tr.getDescription());
   }
 
@@ -49,6 +56,9 @@ public class CheckTestHasFailedResultListener implements TestListener {
 
   @Override
   public void onTestSuccess(final TestResult tr) {
+    if (tr.isWasMutantHit()) {
+      coveringTests.add(tr.getDescription());
+    }
     if (recordPassingTests) {
       this.succeedingTests.add(tr.getDescription());
     }
@@ -56,19 +66,27 @@ public class CheckTestHasFailedResultListener implements TestListener {
 
   public DetectionStatus status() {
     if (!this.failingTests.isEmpty()) {
+      if (coveringTests.isEmpty())
+        return DetectionStatus.KILLED_NOT_COVERED;
       return DetectionStatus.KILLED;
     } else {
+      if (coveringTests.isEmpty())
+        return DetectionStatus.SURVIVED_NOT_COVERED;
       return DetectionStatus.SURVIVED;
     }
   }
 
   public List<Description> getSucceedingTests() {
     return succeedingTests;
-}
+  }
 
   public List<Description> getFailingTests() {
     return failingTests;
-}
+  }
+
+  public List<Description> getCoveringTests() {
+    return coveringTests;
+  }
 
   public int getNumberOfTestsRun() {
     return this.testsRun;

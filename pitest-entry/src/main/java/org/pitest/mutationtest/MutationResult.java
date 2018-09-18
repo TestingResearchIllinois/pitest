@@ -37,6 +37,10 @@ public final class MutationResult {
     return this.status.getKillingTest();
   }
 
+  public List<String> getCoveringTests() {
+    return this.status.getCoveringTests();
+  }
+
   public List<String> getKillingTests() {
     return this.status.getKillingTests();
   }

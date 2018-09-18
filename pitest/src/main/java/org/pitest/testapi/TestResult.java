@@ -24,16 +24,30 @@ public final class TestResult {
 
   private final Throwable     throwable;
   private final TestUnitState state;
+  private final boolean wasMutantHit;
+
+  public boolean isWasMutantHit() {
+    return wasMutantHit;
+  }
 
   public TestResult(final Description description, final Throwable t) {
     this(description, t, TestUnitState.FINISHED);
   }
 
+  public TestResult(final Description description, final Throwable t, final boolean wasMutantHit) {
+    this(description, t, TestUnitState.FINISHED, wasMutantHit);
+  }
+
   public TestResult(final Description description, final Throwable t,
       final TestUnitState state) {
+  	this(description, t, state, false);
+  }
+  public TestResult(final Description description, final Throwable t,
+                    final TestUnitState state, final boolean wasMutantHit) {
     this.description = description;
     this.throwable = t;
     this.state = state;
+    this.wasMutantHit = wasMutantHit;
   }
 
   public Throwable getThrowable() {

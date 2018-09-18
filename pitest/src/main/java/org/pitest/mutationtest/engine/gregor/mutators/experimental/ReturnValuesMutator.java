@@ -251,7 +251,10 @@ public class ReturnValuesMutator implements MethodMutatorFactory {
       final MutationIdentifier mutationId = this.context.registerMutation(
           ReturnValuesMutator.this, description);
 
-      return this.context.shouldMutate(mutationId);
+      boolean ret = this.context.shouldMutate(mutationId);
+      if (ret)
+        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/pitest/mutationtest/MutantCoverageRuntime", "logMutantHit", "()V", false);
+      return ret;
 
     }
 
