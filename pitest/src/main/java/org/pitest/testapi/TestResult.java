@@ -40,7 +40,7 @@ public final class TestResult {
 
   public TestResult(final Description description, final Throwable t,
       final TestUnitState state) {
-  	this(description, t, state, false);
+    this(description, t, state, false);
   }
   public TestResult(final Description description, final Throwable t,
                     final TestUnitState state, final boolean wasMutantHit) {

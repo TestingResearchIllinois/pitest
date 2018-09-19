@@ -126,8 +126,9 @@ public class InlineConstantMutator implements MethodMutatorFactory {
           InlineConstantMutator.this, "Substituted " + constant + " with "
               + replacement);
       boolean ret = this.context.shouldMutate(mutationId);
-      if (ret)
+      if (ret) {
         this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/pitest/mutationtest/MutantCoverageRuntime", "logMutantHit", "()V", false);
+      }
       return ret;
     }
 

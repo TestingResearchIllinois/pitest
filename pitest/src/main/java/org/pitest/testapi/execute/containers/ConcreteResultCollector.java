@@ -17,7 +17,6 @@ package org.pitest.testapi.execute.containers;
 import java.util.Collection;
 
 import org.pitest.mutationtest.MutantCoverageRuntime;
-import org.pitest.mutationtest.engine.Mutant;
 import org.pitest.testapi.Description;
 import org.pitest.testapi.ResultCollector;
 import org.pitest.testapi.TestResult;

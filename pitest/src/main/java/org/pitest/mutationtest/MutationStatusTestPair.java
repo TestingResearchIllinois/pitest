@@ -15,7 +15,12 @@
 package org.pitest.mutationtest;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 public final class MutationStatusTestPair implements Serializable {
 

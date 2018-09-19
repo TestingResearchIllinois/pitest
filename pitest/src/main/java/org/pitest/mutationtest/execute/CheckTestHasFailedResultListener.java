@@ -15,11 +15,8 @@
 package org.pitest.mutationtest.execute;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import org.pitest.mutationtest.DetectionStatus;
-import org.pitest.mutationtest.MutantCoverageRuntime;
-import org.pitest.mutationtest.engine.Mutant;
 import org.pitest.testapi.Description;
 import org.pitest.testapi.TestListener;
 import org.pitest.testapi.TestResult;
@@ -66,12 +63,14 @@ public class CheckTestHasFailedResultListener implements TestListener {
 
   public DetectionStatus status() {
     if (!this.failingTests.isEmpty()) {
-      if (coveringTests.isEmpty())
+      if (coveringTests.isEmpty()) {
         return DetectionStatus.KILLED_NOT_COVERED;
+      }
       return DetectionStatus.KILLED;
     } else {
-      if (coveringTests.isEmpty())
+      if (coveringTests.isEmpty()) {
         return DetectionStatus.SURVIVED_NOT_COVERED;
+      }
       return DetectionStatus.SURVIVED;
     }
   }

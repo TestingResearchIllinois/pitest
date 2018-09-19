@@ -27,7 +27,20 @@ import org.pitest.util.ResultOutputStrategy;
 import org.pitest.util.StringUtil;
 import org.pitest.util.Unchecked;
 
-import static org.pitest.mutationtest.report.xml.Tag.*;
+import static org.pitest.mutationtest.report.xml.Tag.block;
+import static org.pitest.mutationtest.report.xml.Tag.coveringTests;
+import static org.pitest.mutationtest.report.xml.Tag.description;
+import static org.pitest.mutationtest.report.xml.Tag.index;
+import static org.pitest.mutationtest.report.xml.Tag.killingTest;
+import static org.pitest.mutationtest.report.xml.Tag.killingTests;
+import static org.pitest.mutationtest.report.xml.Tag.lineNumber;
+import static org.pitest.mutationtest.report.xml.Tag.methodDescription;
+import static org.pitest.mutationtest.report.xml.Tag.mutatedClass;
+import static org.pitest.mutationtest.report.xml.Tag.mutatedMethod;
+import static org.pitest.mutationtest.report.xml.Tag.mutation;
+import static org.pitest.mutationtest.report.xml.Tag.mutator;
+import static org.pitest.mutationtest.report.xml.Tag.sourceFile;
+import static org.pitest.mutationtest.report.xml.Tag.succeedingTests;
 
 enum Tag {
   mutation, sourceFile, mutatedClass, mutatedMethod, methodDescription, lineNumber, mutator, index, killingTest, killingTests, coveringTests, succeedingTests, description, block;
