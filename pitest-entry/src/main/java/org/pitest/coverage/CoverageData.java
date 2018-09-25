@@ -114,7 +114,13 @@ public class CoverageData implements CoverageDatabase {
 
   public void calculateClassCoverage(final CoverageResult cr) {
 
-    checkForFailedTest(cr);
+    //checkForFailedTest(cr);
+    // For not passing test, simply log, ignore the result, and continue
+    if (!cr.isGreenTest()) {
+      LOG.severe(cr.getTestUnitDescription()
+          + " did not pass without mutation.");
+      return;
+    }
     final TestInfo ti = this.createTestInfo(cr.getTestUnitDescription(),
         cr.getExecutionTime(), cr.getNumberOfCoveredBlocks());
     for (final BlockLocation each : cr.getCoverage()) {
