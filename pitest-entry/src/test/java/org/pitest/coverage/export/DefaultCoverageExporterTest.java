@@ -50,12 +50,12 @@ public class DefaultCoverageExporterTest {
     final Collection<BlockCoverage> coverage = Arrays.asList(
         new BlockCoverage(block.withLocation(
             loc.withClass(ClassName.fromString("Foo"))).build(), Arrays.asList(
-            new TestInfo("Test1", "Test1", 0, null, 0),
-            new TestInfo("Test2", "Test2", 0, null, 0))),
+            new TestInfo("Test1", "Test1", 0, null, 0, false),
+            new TestInfo("Test2", "Test2", 0, null, 0, false))),
         new BlockCoverage(block.withLocation(
             loc.withClass(ClassName.fromString("Bar"))).build(), Arrays.asList(
-            new TestInfo("Test3", "Test3", 0, null, 0),
-            new TestInfo("Test4", "Test4", 0, null, 0))));
+            new TestInfo("Test3", "Test3", 0, null, 0, false),
+            new TestInfo("Test4", "Test4", 0, null, 0, false))));
     this.testee.recordCoverage(coverage);
 
     final String actual = this.out.toString();
@@ -76,10 +76,10 @@ public class DefaultCoverageExporterTest {
     final Collection<BlockCoverage> coverage = Arrays.asList(
         new BlockCoverage(
             block.withLocation(loc.withClass(ClassName.fromString("Foo"))).build(),
-            Collections.singletonList(new TestInfo("ParameterizedTest", "ParameterizedTest[case='Not so simple quotes']", 0, null, 0))),
+            Collections.singletonList(new TestInfo("ParameterizedTest", "ParameterizedTest[case='Not so simple quotes']", 0, null, 0, false))),
         new BlockCoverage(
             block.withLocation(loc.withClass(ClassName.fromString("Foo"))).build(),
-            Collections.singletonList(new TestInfo("ParameterizedTest", "ParameterizedTest[case=\0 Null-Byte]", 0, null, 0)))
+            Collections.singletonList(new TestInfo("ParameterizedTest", "ParameterizedTest[case=\0 Null-Byte]", 0, null, 0, false)))
         );
 
     testee.recordCoverage(coverage);

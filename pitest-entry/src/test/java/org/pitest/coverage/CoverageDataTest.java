@@ -212,7 +212,7 @@ public class CoverageDataTest {
         1));
     final BlockCoverage actual = this.testee.createCoverage().get(0);
     assertEquals(block.build(), actual.getBlock());
-    assertThat(actual.getTests()).contains(new TestInfo("FooTest", "FooTest.fooTest", 0, null, 0));
+    assertThat(actual.getTests()).contains(new TestInfo("FooTest", "FooTest.fooTest", 0, null, 0, false));
   }
 
   @Test

@@ -83,7 +83,7 @@ public class DefaultTestPrioritiserTest {
   }
 
   private Function<Integer, TestInfo> timeToTestInfo() {
-    return a -> new TestInfo("foo", "bar", a, Optional.<ClassName> empty(), 0);
+    return a -> new TestInfo("foo", "bar", a, Optional.<ClassName> empty(), 0, false);
   }
 
   private MutationDetails makeMutation(final String method) {

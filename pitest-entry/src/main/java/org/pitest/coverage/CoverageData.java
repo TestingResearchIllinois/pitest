@@ -15,19 +15,11 @@
 
 package org.pitest.coverage;
 
+import java.io.FileWriter;
 import java.math.BigInteger;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -121,17 +113,40 @@ public class CoverageData implements CoverageDatabase {
     return tis;
   }
 
+
+  private static HashSet<String> failedTests = new HashSet<>();
+
+  private static LinkedList<String> messages = new LinkedList<>();
+  static{
+    Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+      @Override
+      public void run() {
+        String outputFile = System.getenv("KP_PIT_COV_LOG");
+        if(outputFile == null)
+          System.err.println("NOT logging output from pit! set KP_PIT_COV_LOG to a file name if you want it");
+        try {
+          FileWriter fw = new FileWriter(outputFile);
+          for(String s : messages)
+            fw.write(s);
+          fw.close();
+        }catch(Throwable t)
+        {
+          t.printStackTrace();
+        }
+      }
+    }));
+  }
   public void calculateClassCoverage(final CoverageResult cr) {
 
-    //checkForFailedTest(cr);
-    // For not passing test, simply log, ignore the result, and continue
-    if (!cr.isGreenTest()) {
-      LOG.severe(cr.getTestUnitDescription()
-          + " did not pass without mutation.");
-      return;
-    }
+    checkForFailedTest(cr);
     final TestInfo ti = this.createTestInfo(cr.getTestUnitDescription(),
-        cr.getExecutionTime(), cr.getNumberOfCoveredBlocks());
+        cr.getExecutionTime(), cr.getNumberOfCoveredBlocks(), !cr.isGreenTest());
+    if(cr.isGreenTest())
+      messages.add("PASS: " +ti.getName() + "\n");
+    else
+      messages.add("FAIL: " + ti.getName() + "\n");
+    if(!cr.isGreenTest())
+      failedTests.add(ti.getName());
     for (final BlockLocation each : cr.getCoverage()) {
       addTestsToBlockMap(ti, each);
     }
@@ -244,19 +259,12 @@ public class CoverageData implements CoverageDatabase {
     }
   }
 
-  HashMap<String, TestInfo> testInfos = new HashMap<>();
   private TestInfo createTestInfo(final Description description,
-      final int executionTime, final int linesCovered) {
+      final int executionTime, final int linesCovered, final boolean failed) {
     final Optional<ClassName> testee = this.code
         .findTestee(description.getFirstTestClass());
-    TestInfo ret = testInfos.get(description.toString());
-    if (ret != null) {
-      ret.incrementRuns();
-      return ret;
-    }
-    ret = new TestInfo(description.getFirstTestClass(),
-        description.getQualifiedName(), executionTime, testee, linesCovered);
-    return ret;
+    return new TestInfo(description.getFirstTestClass(),
+        description.getQualifiedName(), executionTime, testee, linesCovered, failed);
   }
 
   private BiFunction<Integer, ClassName, Integer> numberCoveredLines() {
@@ -297,8 +305,12 @@ public class CoverageData implements CoverageDatabase {
 
     for (final Entry<BlockLocation, Map<String, TestInfo>> each : tests) {
       for (final int line : getLinesForBlock(each.getKey())) {
-        final Set<TestInfo> tis = getLineTestSet(clazz, linesToTests, each, line);
-        tis.addAll(each.getValue().values());
+        final Set<TestInfo> tis = getLineTestSet(clazz, linesToTests, each, line, failedTests);
+        for(final Entry<String, TestInfo> notEach : each.getValue().entrySet())
+        {
+          if(!failedTests.contains(notEach.getKey()))
+            tis.add(notEach.getValue());
+        }
       }
     }
 
@@ -308,12 +320,12 @@ public class CoverageData implements CoverageDatabase {
 
   private static Set<TestInfo> getLineTestSet(ClassName clazz,
       Map<ClassLine, Set<TestInfo>> linesToTests,
-      Entry<BlockLocation, Map<String, TestInfo>> each, int line) {
+      Entry<BlockLocation, Map<String, TestInfo>> each, int line,
+      HashSet<String> failedTests) {
     final ClassLine cl = new ClassLine(clazz, line);
     Set<TestInfo> tis = linesToTests.get(cl);
     if (tis == null) {
       tis = new TreeSet<>(new TestInfoNameComparator());
-      tis.addAll(each.getValue().values());
       linesToTests.put(new ClassLine(clazz, line), tis);
     }
     return tis;
@@ -342,7 +354,10 @@ public class CoverageData implements CoverageDatabase {
   }
 
   private Function<Entry<BlockLocation, Map<String,TestInfo>>, Stream<TestInfo>> toTests() {
-    return a -> a.getValue().values().stream();
+    return a -> a.getValue().values().stream().filter(isFailed());
+  }
+  private Predicate<TestInfo> isFailed(){
+    return a -> !failedTests.contains(a.getName());
   }
 
   private Predicate<Entry<BlockLocation, Map<String, TestInfo>>> isFor(

@@ -37,7 +37,7 @@ class BlockCoverageDataLoader extends DataLoader<BlockCoverage> {
     final Collection<String> tests = (Collection<String>) map.get(TESTS);
     final Collection<TestInfo> testInfos = new ArrayList<>();
     for (String test : tests) {
-      testInfos.add(new TestInfo(test, test, 0, null, 0));
+      testInfos.add(new TestInfo(test, test, 0, null, 0, false));
     }
 
     return new BlockCoverage(blockLocation, testInfos);

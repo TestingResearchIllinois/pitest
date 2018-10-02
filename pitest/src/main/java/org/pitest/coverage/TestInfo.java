@@ -36,13 +36,14 @@ public final class TestInfo implements Serializable {
   private int                     coveredCount = 1;
 
   public TestInfo(final String definingClass, final String name,
-      final int time, final Optional<ClassName> testee, final int blocksCovered) {
+      final int time, final Optional<ClassName> testee, final int blocksCovered, final boolean failed) {
     this.definingClass = internIfNotNull(definingClass);
     this.name = name;
     this.time = time;
     this.testee = testee.orElse(null);
     this.blocks = blocksCovered;
   }
+
 
   public TestInfo(TestInfo orig) {
     this.definingClass = orig.definingClass;
@@ -140,4 +141,5 @@ public final class TestInfo implements Serializable {
   public void incrementRuns() {
     totalRuns++;
   }
+
 }

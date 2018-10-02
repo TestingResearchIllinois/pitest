@@ -61,13 +61,13 @@ public class TimeOutDecoratedTestSourceTest {
   public void shouldReturnNoTestUnitWhenNonMatchingTestDetailSupplied() {
     assertTrue(this.testee.translateTests(
         Arrays.asList(new TestInfo("foo", "bar", 42, Optional.<ClassName> empty(),
-            0))).isEmpty());
+            0,false))).isEmpty());
   }
 
   @Test
   public void shouldReturnTestUnitWhenMatchingTestDetailSupplied() {
     final List<TestUnit> actual = this.testee.translateTests(Arrays
-        .asList(new TestInfo("foo", "one", 42, Optional.<ClassName> empty(), 0)));
+        .asList(new TestInfo("foo", "one", 42, Optional.<ClassName> empty(), 0, false)));
     assertEquals(1, actual.size());
   }
 

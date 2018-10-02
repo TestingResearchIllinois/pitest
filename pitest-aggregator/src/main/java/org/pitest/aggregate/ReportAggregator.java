@@ -103,7 +103,7 @@ public final class ReportAggregator {
   }
 
   private Function<String, TestInfo> toTestInfo(final BlockCoverage blockData) {
-    return a -> new TestInfo(null, a, 0, Optional.ofNullable(blockData.getBlock().getLocation().getClassName()), blockData.getBlock().getBlock());
+    return a -> new TestInfo(null, a, 0, Optional.ofNullable(blockData.getBlock().getLocation().getClassName()), blockData.getBlock().getBlock(), false);
   }
 
   public static Builder builder() {
