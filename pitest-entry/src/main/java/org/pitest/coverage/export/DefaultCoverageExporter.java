@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.pitest.coverage.BlockCoverage;
 import org.pitest.coverage.CoverageExporter;
+import org.pitest.coverage.TestInfo;
 import org.pitest.mutationtest.engine.Location;
 import org.pitest.util.ResultOutputStrategy;
 import org.pitest.util.StringUtil;
@@ -51,10 +52,12 @@ public class DefaultCoverageExporter implements CoverageExporter {
             + StringUtil.escapeBasicHtmlChars(l.getMethodName().name()) + StringUtil.escapeBasicHtmlChars(l.getMethodDesc())
             + "' number='" + each.getBlock().getBlock() + "'>");
     write(out, "<tests>\n");
-    final List<String> ts = new ArrayList<>(each.getTests());
-    Collections.sort(ts);
-    for (final String test : ts) {
-      write(out, "<test name='" + StringUtil.escapeBasicHtmlChars(test) + "'/>\n");
+    final List<TestInfo> ts = new ArrayList<>(each.getTests());
+    Collections.sort(ts,(o1, o2) -> o1.getName().compareTo(o2.getName()));
+    for (final TestInfo test : ts) {
+      write(out,
+          "<test name='" + StringUtil.escapeBasicHtmlChars(test.getName())
+              + "' hitCount='" + test.getHitCount() + "'/>\n");
     }
     write(out, "</tests>\n");
     write(out, "</block>\n");

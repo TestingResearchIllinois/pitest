@@ -33,6 +33,8 @@ public final class TestInfo implements Serializable {
 
   private final ClassName         testee;
 
+  private int                     coveredCount = 1;
+
   public TestInfo(final String definingClass, final String name,
       final int time, final Optional<ClassName> testee, final int blocksCovered) {
     this.definingClass = internIfNotNull(definingClass);
@@ -40,6 +42,22 @@ public final class TestInfo implements Serializable {
     this.time = time;
     this.testee = testee.orElse(null);
     this.blocks = blocksCovered;
+  }
+
+  public TestInfo(TestInfo orig) {
+    this.definingClass = orig.definingClass;
+    this.name = orig.name;
+    this.time = orig.time;
+    this.testee = orig.testee;
+    this.blocks = orig.blocks;
+  }
+
+  public int getHitCount() {
+    return coveredCount;
+  }
+
+  public void incrementHitCount() {
+    this.coveredCount++;
   }
 
   public String getName() {
@@ -118,4 +136,8 @@ public final class TestInfo implements Serializable {
     return string.intern();
   }
 
+  private int totalRuns = 1;
+  public void incrementRuns() {
+    totalRuns++;
+  }
 }

@@ -5,9 +5,9 @@ import java.util.Collection;
 public class BlockCoverage {
 
   private final BlockLocation      block;
-  private final Collection<String> tests;
+  private final Collection<TestInfo> tests;
 
-  public BlockCoverage(final BlockLocation block, final Collection<String> tests) {
+  public BlockCoverage(final BlockLocation block, final Collection<TestInfo> tests) {
     this.block = block;
     this.tests = tests;
   }
@@ -16,7 +16,7 @@ public class BlockCoverage {
     return this.block;
   }
 
-  public Collection<String> getTests() {
+  public Collection<TestInfo> getTests() {
     return this.tests;
   }
 

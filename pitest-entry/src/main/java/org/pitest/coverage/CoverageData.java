@@ -18,6 +18,7 @@ package org.pitest.coverage;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -48,7 +50,7 @@ public class CoverageData implements CoverageDatabase {
   // We calculate block coverage, but everything currently runs on line
   // coverage. Ugly mess of maps below should go when
   // api changed to work via blocks
-  private final Map<BlockLocation, Set<TestInfo>>             blockCoverage;
+  private final Map<BlockLocation, Map<String, TestInfo>>             blockCoverage;
   private final Map<BlockLocation, Set<Integer>>              blocksToLines = new LinkedHashMap<>();
   private final Map<ClassName, Map<ClassLine, Set<TestInfo>>> lineCoverage  = new LinkedHashMap<>();
   private final Map<String, Collection<ClassInfo>>            classesForFile;
@@ -65,7 +67,14 @@ public class CoverageData implements CoverageDatabase {
 
 
   public CoverageData(final CodeSource code, final LineMap lm, Map<BlockLocation, Set<TestInfo>> blockCoverage) {
-    this.blockCoverage = blockCoverage;
+    this.blockCoverage = new HashMap<>();
+    for (Entry<BlockLocation, Set<TestInfo>> e : blockCoverage.entrySet()) {
+      HashMap<String, TestInfo> tmp = new HashMap<>();
+      this.blockCoverage.put(e.getKey(), tmp);
+      for (TestInfo i : e.getValue()) {
+        tmp.put(i.toString(), i);
+      }
+    }
     this.code = code;
     this.lm = lm;
     this.classesForFile = FCollection.bucket(this.code.getCode(),
@@ -129,12 +138,17 @@ public class CoverageData implements CoverageDatabase {
   }
 
   private void addTestsToBlockMap(final TestInfo ti, BlockLocation each) {
-    Set<TestInfo> tests = this.blockCoverage.get(each);
+    Map<String, TestInfo> tests = this.blockCoverage.get(each);
     if (tests == null) {
-      tests = new TreeSet<>(new TestInfoNameComparator());
+      tests = new TreeMap<>();
       this.blockCoverage.put(each, tests);
     }
-    tests.add(ti);
+    TestInfo existing = tests.get(ti.getName());
+    if (existing != null) {
+      existing.incrementHitCount();
+    } else {
+      tests.put(ti.getName(), new TestInfo(ti));
+    }
   }
 
   @Override
@@ -151,9 +165,8 @@ public class CoverageData implements CoverageDatabase {
     return FCollection.map(this.blockCoverage.entrySet(), toBlockCoverage());
   }
 
-  private static Function<Entry<BlockLocation, Set<TestInfo>>, BlockCoverage> toBlockCoverage() {
-    return a -> new BlockCoverage(a.getKey(), FCollection.map(a.getValue(),
-        TestInfo.toName()));
+  private static Function<Entry<BlockLocation, Map<String, TestInfo>>, BlockCoverage> toBlockCoverage() {
+    return a -> new BlockCoverage(a.getKey(), a.getValue().values());
   }
 
   @Override
@@ -231,12 +244,19 @@ public class CoverageData implements CoverageDatabase {
     }
   }
 
+  HashMap<String, TestInfo> testInfos = new HashMap<>();
   private TestInfo createTestInfo(final Description description,
       final int executionTime, final int linesCovered) {
-    final Optional<ClassName> testee = this.code.findTestee(description
-        .getFirstTestClass());
-    return new TestInfo(description.getFirstTestClass(),
+    final Optional<ClassName> testee = this.code
+        .findTestee(description.getFirstTestClass());
+    TestInfo ret = testInfos.get(description.toString());
+    if (ret != null) {
+      ret.incrementRuns();
+      return ret;
+    }
+    ret = new TestInfo(description.getFirstTestClass(),
         description.getQualifiedName(), executionTime, testee, linesCovered);
+    return ret;
   }
 
   private BiFunction<Integer, ClassName, Integer> numberCoveredLines() {
@@ -269,16 +289,16 @@ public class CoverageData implements CoverageDatabase {
 
   private Map<ClassLine, Set<TestInfo>> convertBlockCoverageToLineCoverageForClass(
       ClassName clazz) {
-    final List<Entry<BlockLocation, Set<TestInfo>>> tests = FCollection.filter(
+    final List<Entry<BlockLocation, Map<String, TestInfo>>> tests = FCollection.filter(
         this.blockCoverage.entrySet(), isFor(clazz));
 
     final Map<ClassLine, Set<TestInfo>> linesToTests = new LinkedHashMap<>(
         0);
 
-    for (final Entry<BlockLocation, Set<TestInfo>> each : tests) {
+    for (final Entry<BlockLocation, Map<String, TestInfo>> each : tests) {
       for (final int line : getLinesForBlock(each.getKey())) {
         final Set<TestInfo> tis = getLineTestSet(clazz, linesToTests, each, line);
-        tis.addAll(each.getValue());
+        tis.addAll(each.getValue().values());
       }
     }
 
@@ -288,12 +308,12 @@ public class CoverageData implements CoverageDatabase {
 
   private static Set<TestInfo> getLineTestSet(ClassName clazz,
       Map<ClassLine, Set<TestInfo>> linesToTests,
-      Entry<BlockLocation, Set<TestInfo>> each, int line) {
+      Entry<BlockLocation, Map<String, TestInfo>> each, int line) {
     final ClassLine cl = new ClassLine(clazz, line);
     Set<TestInfo> tis = linesToTests.get(cl);
     if (tis == null) {
       tis = new TreeSet<>(new TestInfoNameComparator());
-      tis.addAll(each.getValue());
+      tis.addAll(each.getValue().values());
       linesToTests.put(new ClassLine(clazz, line), tis);
     }
     return tis;
@@ -321,11 +341,11 @@ public class CoverageData implements CoverageDatabase {
     this.countFailedTests++;
   }
 
-  private Function<Entry<BlockLocation, Set<TestInfo>>, Stream<TestInfo>> toTests() {
-    return a -> a.getValue().stream();
+  private Function<Entry<BlockLocation, Map<String,TestInfo>>, Stream<TestInfo>> toTests() {
+    return a -> a.getValue().values().stream();
   }
 
-  private Predicate<Entry<BlockLocation, Set<TestInfo>>> isFor(
+  private Predicate<Entry<BlockLocation, Map<String, TestInfo>>> isFor(
       final ClassName clazz) {
     return a -> a.getKey().isFor(clazz);
   }

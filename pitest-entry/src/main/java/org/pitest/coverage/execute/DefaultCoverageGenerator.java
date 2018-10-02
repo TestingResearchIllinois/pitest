@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -110,12 +111,22 @@ public class DefaultCoverageGenerator implements CoverageGenerator {
     }
   }
 
+  private List<String> duplicateTestsForCoverage(List<String> tests) {
+    LinkedList<String> ret = new LinkedList<>();
+    for (String t : tests) {
+      for (int i = 0; i < 10; i++) {
+        ret.add(t);
+      }
+    }
+    return ret;
+  }
+
   private void gatherCoverageData(final Collection<ClassInfo> tests,
       final CoverageData coverage) throws IOException, InterruptedException,
       ExecutionException {
 
-    final List<String> filteredTests = FCollection
-        .map(tests, classInfoToName());
+    final List<String> filteredTests = duplicateTestsForCoverage(FCollection
+        .map(tests, classInfoToName()));
 
     final SideEffect1<CoverageResult> handler = resultProcessor(coverage);
 
