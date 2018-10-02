@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -147,7 +149,8 @@ public class MutationTestWorker {
         LOG.fine("replaced class with mutant in "
             + (System.currentTimeMillis() - t0) + " ms");
       }
-      mutationDetected = doTestsDetectMutation(c, relevantTests);
+      mutationDetected = doTestsDetectMutationWithReruns(c, relevantTests);
+      //mutationDetected = doTestsDetectMutation(c, relevantTests);
     } else {
       LOG.warning("Mutation " + mutationId + " was not viable ");
       mutationDetected = new MutationStatusTestPair(0,
@@ -178,6 +181,81 @@ public class MutationTestWorker {
         + this.loader + ", hotswap=" + this.hotswap + "]";
   }
 
+  private MutationStatusTestPair doTestsDetectMutationWithReruns(final Container c,
+      final List<TestUnit> tests) {
+    try {
+      // Store some values concerning overall runs with reruns
+      int numTotalRuns = 0;
+      List<String> allKillingTests = new ArrayList<String>();
+      List<String> allSucceedingTests = new ArrayList<String>();
+      List<String> allCoveringTests = new ArrayList<String>();
+      List<String> allTests = new ArrayList<String>();
+      for (TestUnit test : tests) {
+        allTests.add(test.getDescription().getQualifiedName());
+      }
+
+      // Determine what tests can be saved and which need to be rerun
+      // NOTE: Run at most 10 times for now
+      for (int count = 0; count < 10; count++) {
+        MutationStatusTestPair pair = doTestsDetectMutation(c, tests);
+        // Exit early if found some status without knowledge of tests...
+        if (pair.getStatus() == DetectionStatus.TIMED_OUT
+          || pair.getStatus() == DetectionStatus.NON_VIABLE
+          || pair.getStatus() == DetectionStatus.MEMORY_ERROR
+          || pair.getStatus() == DetectionStatus.RUN_ERROR) {
+          return pair;
+        }
+
+        List<String> coveringTests = pair.getCoveringTests();
+
+        // Intersect to get all the ones that both cover and kill/survive
+        Set<String> killingAndCoveringTests = new HashSet<String>(pair.getKillingTests());
+        killingAndCoveringTests.retainAll(coveringTests);
+        Set<String> succeedingAndCoveringTests = new HashSet<String>(pair.getSucceedingTests());
+        succeedingAndCoveringTests.retainAll(coveringTests);
+
+        // Accumulate all data from this run
+        numTotalRuns += pair.getNumberOfTestsRun();
+        allKillingTests.addAll(killingAndCoveringTests);
+        allSucceedingTests.addAll(succeedingAndCoveringTests);
+        allCoveringTests.addAll(coveringTests);
+
+        // If not full matrix and found that a test has actually killed the mutant, stop
+        // TODO: If didn't find one, should reorder and put at end?
+        if (this.fullMutationMatrix && killingAndCoveringTests.size() > 0) {
+          break;
+        }
+
+        // If there are still tests that are not covering, rerun until they do
+        if ((allKillingTests.size() + allSucceedingTests.size()) < allTests.size()) {
+          Set<TestUnit> toRemove = new HashSet<TestUnit>();
+          for (TestUnit tu : tests) {
+            // Remove any test that was covering already, no need to rerun
+            if (coveringTests.contains(tu.getDescription().getQualifiedName())) {
+              toRemove.add(tu);
+            }
+          }
+          tests.removeAll(toRemove);
+        } else {
+          break;
+        }
+      }
+
+      // Make an overall pair with accumulated data
+      DetectionStatus overallStatus;    // TODO: Double-check status logic
+      if (allKillingTests.size() > 0) {
+        overallStatus = DetectionStatus.KILLED;
+      } else {
+        overallStatus = DetectionStatus.SURVIVED;
+      }
+      MutationStatusTestPair overallPair = new MutationStatusTestPair(numTotalRuns, overallStatus, allKillingTests, allSucceedingTests, allCoveringTests);
+
+      return overallPair;
+    } catch (final Exception ex) {
+      throw translateCheckedException(ex);
+    }
+  }
+
   private MutationStatusTestPair doTestsDetectMutation(final Container c,
       final List<TestUnit> tests) {
     try {
@@ -204,9 +282,9 @@ public class MutationTestWorker {
         .map(description -> description.getQualifiedName()).collect(Collectors.toList());
     List<String> succeedingTests = listener.getSucceedingTests().stream()
         .map(description -> description.getQualifiedName()).collect(Collectors.toList());
-
     List<String> coveringTests = listener.getCoveringTests().stream()
             .map(description -> description.getQualifiedName()).collect(Collectors.toList());
+
     return new MutationStatusTestPair(listener.getNumberOfTestsRun(),
         listener.status(), failingTests, succeedingTests, coveringTests);
   }
