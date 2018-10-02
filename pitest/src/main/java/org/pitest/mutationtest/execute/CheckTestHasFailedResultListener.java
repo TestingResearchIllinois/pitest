@@ -56,9 +56,9 @@ public class CheckTestHasFailedResultListener implements TestListener {
     if (tr.isWasMutantHit()) {
       coveringTests.add(tr.getDescription());
     }
-    if (recordPassingTests) {
+//    if (recordPassingTests) {
       this.succeedingTests.add(tr.getDescription());
-    }
+//    }
   }
 
   public DetectionStatus status() {

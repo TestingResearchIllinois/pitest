@@ -174,6 +174,9 @@ public class AbstractPitMojo extends AbstractMojo {
   @Parameter
   private ArrayList<String>           jvmArgs;
 
+  @Parameter(property="debugMinions")
+  private boolean                   debugMinions;
+
   /**
    * Formats to output during analysis phase
    */
@@ -187,7 +190,7 @@ public class AbstractPitMojo extends AbstractMojo {
   private boolean                     verbose;
 
   /**
-   * Throw error if no mutations found
+    Throw error if no mutations found
    */
   @Parameter(defaultValue = "true", property = "failWhenNoMutations")
   private boolean                     failWhenNoMutations;
@@ -377,6 +380,12 @@ public class AbstractPitMojo extends AbstractMojo {
   @Override
   public final void execute() throws MojoExecutionException,
       MojoFailureException {
+
+    if(this.debugMinions) {
+      if(jvmArgs == null)
+        jvmArgs = new ArrayList<>();
+      jvmArgs.add("-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000");
+    }
 
     switchLogging();
     RunDecision shouldRun = shouldRun();

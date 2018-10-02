@@ -79,8 +79,17 @@ public enum DetectionStatus {
   /**
    * Mutation should have been covered by this test, but when we ran the mutant it was not.
    */
-  SURVIVED_NOT_COVERED(false);
+  SURVIVED_NOT_COVERED(false),
 
+  /**
+   * Muation should have been covered, was never covered, and we saw both survived, killed
+   */
+  UNKNOWN_WEIRD(false),
+
+  /**
+   * SHOULD have been covered, but wasn't
+   */
+  NOT_COVERED_DURING_RUN(false);
   private final boolean detected;
 
   DetectionStatus(final boolean detected) {

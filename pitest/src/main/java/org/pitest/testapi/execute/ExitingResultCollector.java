@@ -14,6 +14,7 @@
  */
 package org.pitest.testapi.execute;
 
+import org.pitest.mutationtest.MutantCoverageRuntime;
 import org.pitest.testapi.Description;
 import org.pitest.testapi.ResultCollector;
 
@@ -21,6 +22,7 @@ public class ExitingResultCollector implements ResultCollector {
 
   private final ResultCollector child;
   private boolean               hadFailure = false;
+  private boolean               covered = false;
 
   public ExitingResultCollector(final ResultCollector child) {
     this.child = child;
@@ -38,12 +40,13 @@ public class ExitingResultCollector implements ResultCollector {
 
   @Override
   public boolean shouldExit() {
-    return this.hadFailure;
+    return this.hadFailure && this.covered;
   }
 
   @Override
   public void notifyEnd(final Description description, final Throwable t) {
     this.child.notifyEnd(description, t);
+    this.covered = MutantCoverageRuntime.isHit;
     if (t != null) {
       this.hadFailure = true;
     }

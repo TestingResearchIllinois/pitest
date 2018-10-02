@@ -117,21 +117,24 @@ public class CoverageData implements CoverageDatabase {
   private static HashSet<String> failedTests = new HashSet<>();
 
   private static LinkedList<String> messages = new LinkedList<>();
-  static{
+
+  static {
     Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
       @Override
       public void run() {
         String outputFile = System.getenv("KP_PIT_COV_LOG");
-        if(outputFile == null)
-          System.err.println("NOT logging output from pit! set KP_PIT_COV_LOG to a file name if you want it");
-        try {
-          FileWriter fw = new FileWriter(outputFile);
-          for(String s : messages)
-            fw.write(s);
-          fw.close();
-        }catch(Throwable t)
-        {
-          t.printStackTrace();
+        if (outputFile == null) {
+          System.err.println(
+              "NOT logging output from pit! set KP_PIT_COV_LOG to a file name if you want it");
+        } else {
+          try {
+            FileWriter fw = new FileWriter(outputFile);
+            for (String s : messages)
+              fw.write(s);
+            fw.close();
+          } catch (Throwable t) {
+            t.printStackTrace();
+          }
         }
       }
     }));

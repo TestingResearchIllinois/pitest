@@ -52,6 +52,21 @@ public final class MutationStatusTestPair implements Serializable {
     this.numberOfTestsRun = numberOfTestsRun;
     this.coveringTests = coveringTests;
   }
+
+  public void renameTests(String suffix) {
+    _renameTests(killingTests, suffix);
+    _renameTests(succeedingTests, suffix);
+    _renameTests(coveringTests, suffix);
+  }
+
+  private void _renameTests(List<String> aList, String suffix)
+  {
+    for(int i = 0; i < aList.size(); i++)
+    {
+      aList.set(i,aList.get(i)+suffix);
+    }
+  }
+
   
   private static List<String> killingTestToList(String killingTest) {
     if (killingTest == null) {

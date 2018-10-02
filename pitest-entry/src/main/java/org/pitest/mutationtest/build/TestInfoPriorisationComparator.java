@@ -38,7 +38,12 @@ Serializable {
   public int compare(final TestInfo arg0, final TestInfo arg1) {
     final int t0 = arg0.getTime();
     final int t1 = arg1.getTime();
-    return t0 - t1 - distanceWeighting(arg0, arg1);
+    if(arg0.getHitCount() > arg1.getHitCount())
+      return -1;
+    else if(arg0.getHitCount() < arg1.getHitCount())
+      return 1;
+    else
+      return t0 - t1 - distanceWeighting(arg0, arg1);
   }
 
   private int distanceWeighting(final TestInfo arg0, final TestInfo arg1) {
