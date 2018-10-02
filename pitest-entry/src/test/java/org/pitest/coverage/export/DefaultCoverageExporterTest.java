@@ -15,6 +15,7 @@ import org.junit.Test;
 import org.pitest.classinfo.ClassName;
 import org.pitest.coverage.BlockCoverage;
 import org.pitest.coverage.CoverageMother.BlockLocationBuilder;
+import org.pitest.coverage.TestInfo;
 import org.pitest.mutationtest.LocationMother.LocationBuilder;
 import org.pitest.util.ResultOutputStrategy;
 
@@ -49,10 +50,12 @@ public class DefaultCoverageExporterTest {
     final Collection<BlockCoverage> coverage = Arrays.asList(
         new BlockCoverage(block.withLocation(
             loc.withClass(ClassName.fromString("Foo"))).build(), Arrays.asList(
-            "Test1", "Test2")),
+            new TestInfo("Test1", "Test1", 0, null, 0),
+            new TestInfo("Test2", "Test2", 0, null, 0))),
         new BlockCoverage(block.withLocation(
             loc.withClass(ClassName.fromString("Bar"))).build(), Arrays.asList(
-            "Test3", "Test4")));
+            new TestInfo("Test3", "Test3", 0, null, 0),
+            new TestInfo("Test4", "Test4", 0, null, 0))));
     this.testee.recordCoverage(coverage);
 
     final String actual = this.out.toString();
@@ -73,10 +76,10 @@ public class DefaultCoverageExporterTest {
     final Collection<BlockCoverage> coverage = Arrays.asList(
         new BlockCoverage(
             block.withLocation(loc.withClass(ClassName.fromString("Foo"))).build(),
-            Collections.singletonList("ParameterizedTest[case='Not so simple quotes']")),
+            Collections.singletonList(new TestInfo("ParameterizedTest", "ParameterizedTest[case='Not so simple quotes']", 0, null, 0))),
         new BlockCoverage(
             block.withLocation(loc.withClass(ClassName.fromString("Foo"))).build(),
-            Collections.singletonList("ParameterizedTest[case=\0 Null-Byte]"))
+            Collections.singletonList(new TestInfo("ParameterizedTest", "ParameterizedTest[case=\0 Null-Byte]", 0, null, 0)))
         );
 
     testee.recordCoverage(coverage);

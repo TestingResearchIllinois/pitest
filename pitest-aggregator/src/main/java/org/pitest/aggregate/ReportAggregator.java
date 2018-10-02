@@ -97,7 +97,7 @@ public final class ReportAggregator {
     final Map<BlockLocation, Set<TestInfo>> blockCoverageMap = new HashMap<>();
 
     for (final BlockCoverage blockData : coverageData) {
-      blockCoverageMap.put(blockData.getBlock(), new HashSet<>(FCollection.map(blockData.getTests(), toTestInfo(blockData))));
+      blockCoverageMap.put(blockData.getBlock(), new HashSet<>(blockData.getTests()));
     }
     return blockCoverageMap;
   }

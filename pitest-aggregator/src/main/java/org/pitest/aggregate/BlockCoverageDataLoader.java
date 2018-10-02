@@ -1,12 +1,14 @@
 package org.pitest.aggregate;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
 import org.pitest.classinfo.ClassName;
 import org.pitest.coverage.BlockCoverage;
 import org.pitest.coverage.BlockLocation;
+import org.pitest.coverage.TestInfo;
 import org.pitest.mutationtest.engine.Location;
 import org.pitest.mutationtest.engine.MethodName;
 
@@ -33,8 +35,12 @@ class BlockCoverageDataLoader extends DataLoader<BlockCoverage> {
 
     @SuppressWarnings("unchecked")
     final Collection<String> tests = (Collection<String>) map.get(TESTS);
+    final Collection<TestInfo> testInfos = new ArrayList<>();
+    for (String test : tests) {
+      testInfos.add(new TestInfo(test, test, 0, null, 0));
+    }
 
-    return new BlockCoverage(blockLocation, tests);
+    return new BlockCoverage(blockLocation, testInfos);
   }
 
 }
