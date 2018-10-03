@@ -128,7 +128,7 @@ public class CoverageData implements CoverageDatabase {
               "NOT logging output from pit! set KP_PIT_COV_LOG to a file name if you want it");
         } else {
           try {
-            FileWriter fw = new FileWriter(outputFile);
+            FileWriter fw = new FileWriter(outputFile, true);
             for (String s : messages)
               fw.write(s);
             fw.close();
