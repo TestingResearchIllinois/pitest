@@ -191,10 +191,6 @@ public class MutationTestWorker {
       List<String> allKilling = new ArrayList<>();
       List<String> allSucceeding = new ArrayList<>();
       List<String> allCoveringTests = new ArrayList<String>();
-      List<String> allTests = new ArrayList<String>();
-      for (TestUnit test : tests) {
-        allTests.add(test.getDescription().getQualifiedName());
-      }
 
       // Determine what tests can be saved and which need to be rerun
       // NOTE: Run at most 10 times for now
@@ -230,19 +226,17 @@ public class MutationTestWorker {
           break;
         }
 
-        // If there are still tests that are not covering, rerun until they do
-        if ((allKillingAndCovering.size() + allSucceedingAndCovering.size())
-            < allTests.size()) {
-          Set<TestUnit> toRemove = new HashSet<TestUnit>();
-          for (TestUnit tu : tests) {
-            // Remove any test that was covering already, no need to rerun
-            if (coveringTests.contains(
-                tu.getDescription().getQualifiedName() + "#" + count)) {
-              toRemove.add(tu);
-            }
+        // Remove any test that was covering already from set of tests to rerun next iteration
+        Set<TestUnit> toRemove = new HashSet<TestUnit>();
+        for (TestUnit tu : tests) {
+          if (coveringTests.contains(
+              tu.getDescription().getQualifiedName() + "#" + count)) {
+            toRemove.add(tu);
           }
-          tests.removeAll(toRemove);
-        } else {
+        }
+        tests.removeAll(toRemove);
+        // Can quit if no more tests to rerun
+        if (tests.isEmpty()) {
           break;
         }
       }
@@ -252,18 +246,13 @@ public class MutationTestWorker {
       if (allKillingAndCovering.size() > 0) {
         //If at least one test killed and covered then "killed"
         overallStatus = DetectionStatus.KILLED;
-      }
-      else if(allSucceedingAndCovering.size() > 0 && allSucceeding.size() == allSucceedingAndCovering.size() && allKilling.size() == 0)
-      {
+      } else if (allSucceedingAndCovering.size() > 0 && allSucceeding.size() == allSucceedingAndCovering.size() && allKilling.size() == 0) {
         //If EVERY time it's supposed to be covered it IS covered and succeeds every time
         overallStatus = DetectionStatus.SURVIVED;
-      }
-      else if(allCoveringTests.size() == 0)
-      {
+      } else if (allCoveringTests.size() == 0) {
         overallStatus = DetectionStatus.NOT_COVERED_DURING_RUN;
-      }
-      else {
-        //Primarily: COVERED but not SURVIVED, also NOT COVERED
+      } else {
+        //Primarily: COVERED but SURVIVED, also has some NOT COVERED
         overallStatus = DetectionStatus.UNKNOWN_WEIRD;
       }
       MutationStatusTestPair overallPair = new MutationStatusTestPair(numTotalRuns, overallStatus, allKilling, allSucceeding, allCoveringTests);
