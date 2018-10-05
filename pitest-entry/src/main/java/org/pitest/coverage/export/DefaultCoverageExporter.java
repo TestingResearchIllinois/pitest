@@ -1,19 +1,14 @@
 package org.pitest.coverage.export;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
-import org.pitest.coverage.BlockCoverage;
-import org.pitest.coverage.CoverageExporter;
-import org.pitest.coverage.TestInfo;
+import org.pitest.coverage.*;
 import org.pitest.mutationtest.engine.Location;
 import org.pitest.util.ResultOutputStrategy;
 import org.pitest.util.StringUtil;
 import org.pitest.util.Unchecked;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.*;
 
 /**
  * Quick and dirty export of coverage data into XML
@@ -26,11 +21,14 @@ public class DefaultCoverageExporter implements CoverageExporter {
     this.outputStrategy = outputStrategy;
   }
 
+  private CoverageData covData;
   @Override
-  public void recordCoverage(final Collection<BlockCoverage> coverage) {
+  public void recordCoverage(final Collection<BlockCoverage> coverage,
+      CoverageData covData) {
     final Writer out = this.outputStrategy
         .createWriterForFile("linecoverage.xml");
-    writeHeader(out);
+    this.covData = covData;
+    writeHeader(out, covData.createSummary());
     for (final BlockCoverage each : coverage) {
       writeLineCoverage(each, out);
     }
@@ -38,19 +36,29 @@ public class DefaultCoverageExporter implements CoverageExporter {
     writeFooterAndClose(out);
   }
 
-  private void writeHeader(final Writer out) {
+  private void writeHeader(final Writer out, CoverageSummary summary) {
     write(out, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-    write(out, "<coverage>\n");
+    write(out,
+        "<coverage linesCovered='" + summary.getNumberOfCoveredLines() + "'"
+            + " totalLines='" + summary.getNumberOfLines()
+            + "', coverage='" + summary.getCoverage() + "'>\n");
   }
 
   private void writeLineCoverage(final BlockCoverage each, final Writer out) {
     final Location l = each.getBlock().getLocation();
+
+    Set<Integer> lines = covData.getLinesForBlock(each.getBlock());
     write(
         out,
         "<block classname='" + l.getClassName().asJavaName() + "'"
             + " method='"
             + StringUtil.escapeBasicHtmlChars(l.getMethodName().name()) + StringUtil.escapeBasicHtmlChars(l.getMethodDesc())
             + "' number='" + each.getBlock().getBlock() + "'>");
+    write(out, "<lines>");
+    for (Integer i : lines) {
+      write(out, "<line>" + i + "</line>");
+    }
+    write(out, "</lines>\n");
     write(out, "<tests>\n");
     final List<TestInfo> ts = new ArrayList<>(each.getTests());
     Collections.sort(ts,(o1, o2) -> o1.getName().compareTo(o2.getName()));

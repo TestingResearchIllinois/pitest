@@ -14,15 +14,11 @@
  */
 package com.example;
 
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
-
+import com.example.CoveredByEasyMock.AnInterface;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.example.CoveredByEasyMock.AnInterface;
+import static org.easymock.EasyMock.*;
 
 public class EasyMockTest {
 

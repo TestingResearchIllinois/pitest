@@ -21,8 +21,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
- *
- *
  * @author Stefan Penndorf <stefan.penndorf@gmail.com>
  */
 public class KeepAliveThread {

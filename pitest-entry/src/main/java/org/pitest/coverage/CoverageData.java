@@ -128,7 +128,7 @@ public class CoverageData implements CoverageDatabase {
               "NOT logging output from pit! set KP_PIT_COV_LOG to a file name if you want it");
         } else {
           try {
-            FileWriter fw = new FileWriter(outputFile, true);
+            FileWriter fw = new FileWriter(outputFile + System.currentTimeMillis(), false);
             for (String s : messages)
               fw.write(s);
             fw.close();
@@ -144,10 +144,12 @@ public class CoverageData implements CoverageDatabase {
     checkForFailedTest(cr);
     final TestInfo ti = this.createTestInfo(cr.getTestUnitDescription(),
         cr.getExecutionTime(), cr.getNumberOfCoveredBlocks(), !cr.isGreenTest());
-    if(cr.isGreenTest())
-      messages.add("PASS: " +ti.getName() + "\n");
-    else
-      messages.add("FAIL: " + ti.getName() + "\n");
+    synchronized (messages) {
+      if (cr.isGreenTest())
+        messages.add("PASS: " + ti.getName() + "\n");
+      else
+        messages.add("FAIL: " + ti.getName() + "\n");
+    }
     if(!cr.isGreenTest())
       failedTests.add(ti.getName());
     for (final BlockLocation each : cr.getCoverage()) {
@@ -334,7 +336,7 @@ public class CoverageData implements CoverageDatabase {
     return tis;
   }
 
-  private Set<Integer> getLinesForBlock(BlockLocation bl) {
+  public Set<Integer> getLinesForBlock(BlockLocation bl) {
     Set<Integer> lines = this.blocksToLines.get(bl);
     if (lines == null) {
       calculateLinesForBlocks(bl.getLocation().getClassName());

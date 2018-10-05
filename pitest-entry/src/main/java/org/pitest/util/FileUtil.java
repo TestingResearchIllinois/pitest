@@ -9,7 +9,8 @@ public class FileUtil {
   public static String readToString(final InputStream is)
       throws java.io.IOException {
     final StringBuilder fileData = new StringBuilder(1000);
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+    try (BufferedReader reader = new BufferedReader(
+        new InputStreamReader(is))) {
       char[] buf = new char[1024];
       int numRead = 0;
 
@@ -23,8 +24,8 @@ public class FileUtil {
   }
 
   public static String randomFilename() {
-    return System.currentTimeMillis()
-        + ("" + Math.random()).replaceAll("\\.", "");
+    return System.currentTimeMillis() + ("" + Math.random())
+        .replaceAll("\\.", "");
   }
 
 }

@@ -14,7 +14,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.pitest.classinfo.ClassName;
 import org.pitest.coverage.BlockCoverage;
+import org.pitest.coverage.CoverageData;
 import org.pitest.coverage.CoverageMother.BlockLocationBuilder;
+import org.pitest.coverage.CoverageSummary;
 import org.pitest.coverage.TestInfo;
 import org.pitest.mutationtest.LocationMother.LocationBuilder;
 import org.pitest.util.ResultOutputStrategy;
@@ -36,7 +38,8 @@ public class DefaultCoverageExporterTest {
 
   @Test
   public void shouldWriteValidXMLDocumentWhenNoCoverage() {
-    this.testee.recordCoverage(Collections.<BlockCoverage> emptyList());
+    this.testee.recordCoverage(Collections.<BlockCoverage> emptyList(),
+       null);
     final String actual = this.out.toString();
     assertThat(actual).contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
     assertThat(actual).contains("<coverage>");
@@ -56,7 +59,7 @@ public class DefaultCoverageExporterTest {
             loc.withClass(ClassName.fromString("Bar"))).build(), Arrays.asList(
             new TestInfo("Test3", "Test3", 0, null, 0, false),
             new TestInfo("Test4", "Test4", 0, null, 0, false))));
-    this.testee.recordCoverage(coverage);
+    this.testee.recordCoverage(coverage, null);
 
     final String actual = this.out.toString();
     assertThat(actual).contains(
@@ -82,7 +85,7 @@ public class DefaultCoverageExporterTest {
             Collections.singletonList(new TestInfo("ParameterizedTest", "ParameterizedTest[case=\0 Null-Byte]", 0, null, 0, false)))
         );
 
-    testee.recordCoverage(coverage);
+    testee.recordCoverage(coverage, null);
 
     final String actual = this.out.toString();
     assertThat(actual).contains(

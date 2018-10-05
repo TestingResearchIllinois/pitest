@@ -1,8 +1,8 @@
 package com.example;
 
-import static org.junit.Assert.assertFalse;
-
 import org.pitest.simpletest.TestAnnotationForTesting;
+
+import static org.junit.Assert.assertFalse;
 
 public class MutationsInNestedClassesTest {
 

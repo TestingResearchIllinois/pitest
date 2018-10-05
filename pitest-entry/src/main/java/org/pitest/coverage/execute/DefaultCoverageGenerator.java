@@ -94,7 +94,7 @@ public class DefaultCoverageGenerator implements CoverageGenerator {
 
 //      verifyBuildSuitableForMutationTesting(coverage);
 
-      this.exporter.recordCoverage(coverage.createCoverage());
+      this.exporter.recordCoverage(coverage.createCoverage(), coverage);
 
       return coverage;
 
