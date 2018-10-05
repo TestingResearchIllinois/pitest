@@ -28,6 +28,10 @@ public class ExitingResultCollector implements ResultCollector {
     this.child = child;
   }
 
+  public boolean hadFailure(){
+    return this.hadFailure;
+  }
+
   @Override
   public void notifySkipped(final Description description) {
     this.child.notifySkipped(description);
