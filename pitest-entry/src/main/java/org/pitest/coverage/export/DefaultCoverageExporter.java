@@ -41,7 +41,7 @@ public class DefaultCoverageExporter implements CoverageExporter {
     write(out,
         "<coverage linesCovered='" + summary.getNumberOfCoveredLines() + "'"
             + " totalLines='" + summary.getNumberOfLines()
-            + "', coverage='" + summary.getCoverage() + "'>\n");
+            + "' coverage='" + summary.getCoverage() + "'>\n");
   }
 
   private void writeLineCoverage(final BlockCoverage each, final Writer out) {
