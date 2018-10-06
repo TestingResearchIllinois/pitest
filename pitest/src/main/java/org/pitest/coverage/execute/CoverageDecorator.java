@@ -59,7 +59,7 @@ public class CoverageDecorator extends TestUnitDecorator {
     }
 
     this.invokeQueue.recordTestOutcome(child().getDescription(),
-        wrappedCollector.hadFailure(), executionTime);
+        !wrappedCollector.hadFailure(), executionTime);
 
   }
 
