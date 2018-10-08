@@ -10,7 +10,7 @@ class AdaptingRunListener extends RunListener {
 
   private final org.pitest.testapi.Description description;
   private final ResultCollector                rc;
-  private boolean                              failed = false;
+  private       boolean                        failed = false;
 
   AdaptingRunListener(final org.pitest.testapi.Description description,
       final ResultCollector rc) {
@@ -18,9 +18,13 @@ class AdaptingRunListener extends RunListener {
     this.rc = rc;
   }
 
+  static org.pitest.testapi.Description toDescription(Description desc) {
+    return new org.pitest.testapi.Description(desc.toString(), desc.getClassName());
+  }
+
   @Override
   public void testFailure(final Failure failure) throws Exception {
-    this.rc.notifyEnd(this.description, failure.getException());
+    this.rc.notifyEnd(toDescription(failure.getDescription()), failure.getException());
     this.failed = true;
   }
 
@@ -32,7 +36,9 @@ class AdaptingRunListener extends RunListener {
 
   @Override
   public void testIgnored(final Description description) throws Exception {
-    this.rc.notifySkipped(this.description);
+    this.rc.notifySkipped(
+
+        toDescription(description));
   }
 
   @Override
@@ -45,13 +51,14 @@ class AdaptingRunListener extends RunListener {
       // This is apparently the junit way.
       throw new StoppedByUserException();
     }
-    this.rc.notifyStart(this.description);
+    this.rc.notifyStart(toDescription(description));
   }
 
   @Override
   public void testFinished(final Description description) throws Exception {
     if (!this.failed) {
-      this.rc.notifyEnd(this.description);
+      this.rc.notifyEnd(toDescription(description));
+
     }
 
   }
