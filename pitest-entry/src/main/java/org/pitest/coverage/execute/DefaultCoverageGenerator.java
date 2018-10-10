@@ -15,16 +15,6 @@
 
 package org.pitest.coverage.execute;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
-import java.util.logging.Logger;
-
 import org.pitest.classinfo.ClassInfo;
 import org.pitest.classpath.CodeSource;
 import org.pitest.coverage.CoverageData;
@@ -40,12 +30,18 @@ import org.pitest.help.PitHelpError;
 import org.pitest.mutationtest.config.TestPluginArguments;
 import org.pitest.process.LaunchOptions;
 import org.pitest.process.ProcessArgs;
-import org.pitest.util.ExitCode;
-import org.pitest.util.Log;
-import org.pitest.util.PitError;
-import org.pitest.util.SocketFinder;
-import org.pitest.util.Timings;
-import org.pitest.util.Unchecked;
+import org.pitest.util.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
+import java.util.logging.Logger;
 
 public class DefaultCoverageGenerator implements CoverageGenerator {
 
@@ -85,7 +81,15 @@ public class DefaultCoverageGenerator implements CoverageGenerator {
           this.code));
 
       this.timings.registerStart(Timings.Stage.COVERAGE);
-      gatherCoverageData(tests, coverage);
+      if (System.getenv("PIT_RERUN_FRESH_JVM") == null)
+        gatherCoverageData(tests, coverage);
+      else {
+        for (int i = 0; i < 10; i++) {
+          for (ClassInfo c : tests) {
+            gatherCoverageData(Collections.singleton(c), coverage);
+          }
+        }
+      }
       this.timings.registerEnd(Timings.Stage.COVERAGE);
 
       final long time = (System.currentTimeMillis() - t0) / 1000;
@@ -112,6 +116,8 @@ public class DefaultCoverageGenerator implements CoverageGenerator {
   }
 
   private List<String> duplicateTestsForCoverage(List<String> tests) {
+    if(System.getenv("PIT_RERUN_SAME_JVM") == null)
+      return tests;
     LinkedList<String> ret = new LinkedList<>();
     for (String t : tests) {
       for (int i = 0; i < 10; i++) {

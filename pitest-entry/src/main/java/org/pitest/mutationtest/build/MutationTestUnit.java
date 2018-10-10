@@ -14,18 +14,21 @@
  */
 package org.pitest.mutationtest.build;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.logging.Logger;
-
 import org.pitest.classinfo.ClassName;
 import org.pitest.mutationtest.DetectionStatus;
 import org.pitest.mutationtest.MutationMetaData;
+import org.pitest.mutationtest.MutationResult;
 import org.pitest.mutationtest.MutationStatusMap;
 import org.pitest.mutationtest.engine.MutationDetails;
 import org.pitest.mutationtest.execute.MutationTestProcess;
 import org.pitest.util.ExitCode;
 import org.pitest.util.Log;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.logging.Logger;
 
 public class MutationTestUnit implements MutationAnalysisUnit {
 
@@ -75,16 +78,34 @@ public class MutationTestUnit implements MutationAnalysisUnit {
 
     final Collection<MutationDetails> remainingMutations = mutations
         .getUnrunMutations();
-    final MutationTestProcess worker = this.workerFactory.createWorker(
+    MutationTestProcess worker = this.workerFactory.createWorker(
         remainingMutations, this.testClasses);
     worker.start();
 
     setFirstMutationToStatusOfStartedInCaseMinionFailsAtBoot(mutations,
         remainingMutations);
 
-    final ExitCode exitCode = waitForMinionToDie(worker);
-    worker.results(mutations);
+    ExitCode exitCode = waitForMinionToDie(worker);
 
+    for (MutationResult r : mutations.createMutationResults()) {
+      HashSet<String> coveringTests = new HashSet<>(r.getCoveringTests());
+      HashSet<String> allTests = new HashSet<>(r.getKillingTests());
+      allTests.addAll(r.getSucceedingTests());
+      allTests.removeAll(coveringTests);
+      LinkedList<ClassName> testsToRerun = new LinkedList<>();
+      for (String s : allTests)
+        testsToRerun.add(ClassName.fromString(s));
+      worker = this.workerFactory
+          .createWorker(remainingMutations, testsToRerun);
+      worker.start();
+
+//      setFirstMutationToStatusOfStartedInCaseMinionFailsAtBoot(mutations,
+//          remainingMutations);
+      exitCode = waitForMinionToDie(worker);
+
+    }
+
+    worker.results(mutations);
     correctResultForProcessExitCode(mutations, exitCode);
   }
 

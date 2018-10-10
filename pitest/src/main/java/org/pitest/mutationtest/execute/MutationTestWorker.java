@@ -14,19 +14,6 @@
  */
 package org.pitest.mutationtest.execute;
 
-import static org.pitest.util.Unchecked.translateCheckedException;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
 import org.pitest.classinfo.ClassName;
 import org.pitest.functional.F3;
 import org.pitest.mutationtest.DetectionStatus;
@@ -45,6 +32,14 @@ import org.pitest.testapi.execute.Pitest;
 import org.pitest.testapi.execute.containers.ConcreteResultCollector;
 import org.pitest.testapi.execute.containers.UnContainer;
 import org.pitest.util.Log;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import static org.pitest.util.Unchecked.translateCheckedException;
 
 public class MutationTestWorker {
 
@@ -149,8 +144,11 @@ public class MutationTestWorker {
         LOG.fine("replaced class with mutant in "
             + (System.currentTimeMillis() - t0) + " ms");
       }
-      mutationDetected = doTestsDetectMutationWithReruns(c, relevantTests);
-      //mutationDetected = doTestsDetectMutation(c, relevantTests);
+      if (System.getenv("PIT_RERUN_SAME_JVM") != null) {
+        mutationDetected = doTestsDetectMutationWithReruns(c, relevantTests);
+      } else {
+        mutationDetected = doTestsDetectMutation(c, relevantTests);
+      }
     } else {
       LOG.warning("Mutation " + mutationId + " was not viable ");
       mutationDetected = new MutationStatusTestPair(0,
