@@ -17,7 +17,6 @@ package org.pitest.mutationtest.build;
 import org.pitest.classinfo.ClassName;
 import org.pitest.mutationtest.DetectionStatus;
 import org.pitest.mutationtest.MutationMetaData;
-import org.pitest.mutationtest.MutationResult;
 import org.pitest.mutationtest.MutationStatusMap;
 import org.pitest.mutationtest.engine.MutationDetails;
 import org.pitest.mutationtest.execute.MutationTestProcess;
@@ -26,8 +25,6 @@ import org.pitest.util.Log;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.logging.Logger;
 
 public class MutationTestUnit implements MutationAnalysisUnit {
@@ -88,27 +85,26 @@ public class MutationTestUnit implements MutationAnalysisUnit {
     ExitCode exitCode = waitForMinionToDie(worker);
     worker.results(mutations);
 
-//      HashSet<String> coveringTests = new HashSet<>(r.getCoveringTests());
-//      HashSet<String> allTests = new HashSet<>(r.getKillingTests());
-//      allTests.addAll(r.getSucceedingTests());
-//      allTests.removeAll(coveringTests);
-//      HashSet<ClassName> testsToRerun = new HashSet<>();
-//      if(allTests.isEmpty())
-//        continue;
-//      for (String s : allTests)
-//        testsToRerun.add(ClassName.fromTestDescription(s));
-//      remainingMutations = mutations.getUnCoveredMutations();
-//      worker = this.workerFactory
-//          .createWorker(remainingMutations, this.testClasses);
-//      worker.start();
-//
-////      setFirstMutationToStatusOfStartedInCaseMinionFailsAtBoot(mutations,
-////          remainingMutations);
-//      exitCode = waitForMinionToDie(worker);
-//      worker.results(mutations);
+    if (System.getenv("PIT_RERUN_FRESH_JVM") != null) {
+      for (int i = 1; i < 10; i++) {
+        remainingMutations = mutations.getUnCoveredMutations();
+        boolean haveWork = false;
+        for (MutationDetails d : remainingMutations) {
+          if (d.getTestsInOrder().size() > 0) {
+            haveWork = true;
+            break;
+          }
+        }
+        if (!haveWork)
+          break;
+        worker = this.workerFactory
+            .createWorker(remainingMutations, this.testClasses);
+        worker.start();
 
-//    }
-
+        exitCode = waitForMinionToDie(worker);
+        worker.results(mutations);
+      }
+    }
     correctResultForProcessExitCode(mutations, exitCode);
   }
 

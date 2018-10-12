@@ -14,6 +14,7 @@
  */
 package org.pitest.mutationtest;
 
+import org.pitest.coverage.TestInfo;
 import org.pitest.functional.FCollection;
 import org.pitest.mutationtest.engine.MutationDetails;
 
@@ -36,10 +37,12 @@ public class MutationStatusMap {
 
   public void setStatusForMutation(final MutationDetails mutation,
       final MutationStatusTestPair status) {
-    if (this.mutationMap.containsKey(mutation)) {
+    if (this.mutationMap.containsKey(mutation) && this.mutationMap.get(mutation).getStatus() == DetectionStatus.NOT_TRIED_FULLY) {
       MutationStatusTestPair existing = this.mutationMap.get(mutation);
       existing.accumulate(status);
     } else {
+      //Update status
+      status.checkForNotFullyTried();
       this.mutationMap.put(mutation, status);
     }
   }
@@ -71,8 +74,15 @@ public class MutationStatusMap {
     List<MutationDetails> toRun = new LinkedList<>();
     for (Entry<MutationDetails, MutationStatusTestPair> each : this.mutationMap
         .entrySet()) {
-      each.getKey().getTestsInOrder()
-          .removeAll(toBaseTestName(each.getValue().getCoveringTests()));
+      LinkedList<TestInfo> newTestsInOrder = new LinkedList<>();
+      HashSet<String> testsThatCovered = toBaseTestName(each.getValue().getCoveringTests());
+      for(TestInfo i : each.getKey().getTestsInOrder())
+      {
+        if(!testsThatCovered.contains(i.getName()))
+          newTestsInOrder.add(i);
+      }
+      each.getKey().getTestsInOrder().clear();;
+      each.getKey().getTestsInOrder().addAll(newTestsInOrder);
     }
     return this.mutationMap.entrySet().stream().filter(hasStatus(DetectionStatus.NOT_TRIED_FULLY)).map(toMutationDetails())
         .collect(Collectors.toList());

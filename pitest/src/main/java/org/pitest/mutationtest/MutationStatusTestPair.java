@@ -194,10 +194,22 @@ public final class MutationStatusTestPair implements Serializable {
     return ret;
   }
 
+  public void checkForNotFullyTried(){
+    HashSet<String> allTests = new HashSet<>(getKillingTests());
+    allTests.addAll(getSucceedingTests());
+    allTests.addAll(getCoveringTests());
+    HashMap<String,String> map = renameTests(allTests);
+    allTests.removeAll(getCoveringTests());
+    if(allTests.size() > 0 && runCount < 10)
+    {
+      //Still not done yet, this test is not determined
+      this.status = DetectionStatus.NOT_TRIED_FULLY;
+    }
+
+  }
+
   public void accumulate(MutationStatusTestPair status) {
 
-    System.out.println(status.getStatus());
-    System.out.println(status.getSucceedingTests());
     HashSet<String> allTests = new HashSet<>(status.getKillingTests());
     allTests.addAll(status.getSucceedingTests());
     allTests.addAll(status.getCoveringTests());
@@ -218,7 +230,24 @@ public final class MutationStatusTestPair implements Serializable {
     }
     else
     {
-      this.status = status.status;
+      //Calculate the final status
+      HashSet<String> killingCovering = new HashSet<>(this.killingTests);
+      killingCovering.retainAll(this.coveringTests);
+      HashSet<String> succCovering = new HashSet<>(this.coveringTests);
+      succCovering.retainAll(this.coveringTests);
+      if(killingCovering.size() > 0)
+        this.status = DetectionStatus.KILLED;
+      else if(this.killingTests.size() > 0 && this.succeedingTests.size() == 0)
+        this.status = DetectionStatus.KILLED_NOT_COVERED;
+      else if(this.killingTests.size() > 0)
+        this.status = DetectionStatus.UNKNOWN_WEIRD;
+      else if(succCovering.size() > 0)
+        this.status= DetectionStatus.SURVIVED;
+      else if(this.succeedingTests.size() > 0)
+        this.status = DetectionStatus.SURVIVED_NOT_COVERED;
+      else
+        this.status = DetectionStatus.UNKNOWN_WEIRD;
+
     }
 
 
