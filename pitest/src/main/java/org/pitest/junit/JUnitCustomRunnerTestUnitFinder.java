@@ -75,7 +75,7 @@ public class JUnitCustomRunnerTestUnitFinder implements TestUnitFinder {
     }
 
     if (Filterable.class.isAssignableFrom(runner.getClass())
-        && !shouldTreatAsOneUnit(clazz, runner)) {
+        /*&& !shouldTreatAsOneUnit(clazz, runner)*/) {
       final List<TestUnit> filteredUnits = splitIntoFilteredUnits(runner.getDescription());
       return filterUnitsByMethod(filteredUnits);
     } else {
