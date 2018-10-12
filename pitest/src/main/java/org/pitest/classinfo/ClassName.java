@@ -40,6 +40,15 @@ public final class ClassName implements Comparable<ClassName>, Serializable {
     return ClassName.fromString(clazz.getName());
   }
 
+  public static ClassName fromTestDescription(final String desc){
+    if(desc.contains("("))
+    {
+      String beforeParens = desc.substring(0,desc.indexOf('('));
+      return fromString(beforeParens.substring(0,beforeParens.lastIndexOf('.')));
+    }
+    return fromString(desc);
+  }
+
   public static ClassName fromString(final String clazz) {
     final String name = clazz.replace('.', '/');
     if (name.equals(OBJECT.asInternalName())) {

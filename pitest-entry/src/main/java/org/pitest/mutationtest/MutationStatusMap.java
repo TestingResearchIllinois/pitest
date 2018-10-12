@@ -14,21 +14,16 @@
  */
 package org.pitest.mutationtest;
 
-import static org.pitest.functional.prelude.Prelude.putToMap;
+import org.pitest.functional.FCollection;
+import org.pitest.mutationtest.engine.MutationDetails;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.pitest.functional.FCollection;
-import org.pitest.mutationtest.engine.MutationDetails;
+import static org.pitest.functional.prelude.Prelude.putToMap;
 
 public class MutationStatusMap {
 
@@ -41,7 +36,12 @@ public class MutationStatusMap {
 
   public void setStatusForMutation(final MutationDetails mutation,
       final MutationStatusTestPair status) {
-    this.mutationMap.put(mutation, status);
+    if (this.mutationMap.containsKey(mutation)) {
+      MutationStatusTestPair existing = this.mutationMap.get(mutation);
+      existing.accumulate(status);
+    } else {
+      this.mutationMap.put(mutation, status);
+    }
   }
 
   public void setStatusForMutations(
@@ -67,6 +67,27 @@ public class MutationStatusMap {
         .collect(Collectors.toList());
   }
 
+  public Collection<MutationDetails> getUnCoveredMutations() {
+    List<MutationDetails> toRun = new LinkedList<>();
+    for (Entry<MutationDetails, MutationStatusTestPair> each : this.mutationMap
+        .entrySet()) {
+      each.getKey().getTestsInOrder()
+          .removeAll(toBaseTestName(each.getValue().getCoveringTests()));
+    }
+    return this.mutationMap.entrySet().stream().filter(hasStatus(DetectionStatus.NOT_TRIED_FULLY)).map(toMutationDetails())
+        .collect(Collectors.toList());
+  }
+
+  private HashSet<String> toBaseTestName(List<String> coveringTests) {
+    HashSet<String> ret = new HashSet<>();
+    for (String s : coveringTests)
+      if (s.contains("#"))
+        ret.add(s.substring(0, s.indexOf("#")));
+      else
+        ret.add(s);
+    return ret;
+  }
+
   public Collection<MutationDetails> getUnfinishedRuns() {
     return this.mutationMap.entrySet().stream()
         .filter(hasStatus(DetectionStatus.STARTED))
@@ -89,6 +110,10 @@ public class MutationStatusMap {
   private static Predicate<Entry<MutationDetails, MutationStatusTestPair>> hasStatus(
       final DetectionStatus status) {
     return a -> a.getValue().getStatus().equals(status);
+  }
+  private static Predicate<Entry<MutationDetails, MutationStatusTestPair>> hasNotCoveredStatus() {
+    return a -> a.getValue().getStatus().equals(DetectionStatus.KILLED_NOT_COVERED) ||
+        a.getValue().getStatus().equals(DetectionStatus.SURVIVED_NOT_COVERED);
   }
 
   public void markUncoveredMutations() {

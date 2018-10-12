@@ -89,7 +89,12 @@ public enum DetectionStatus {
   /**
    * SHOULD have been covered, but wasn't
    */
-  NOT_COVERED_DURING_RUN(false);
+  NOT_COVERED_DURING_RUN(false),
+
+  /**
+   * In process of running; some tests have not yet covered it
+   */
+  NOT_TRIED_FULLY(false);
   private final boolean detected;
 
   DetectionStatus(final boolean detected) {

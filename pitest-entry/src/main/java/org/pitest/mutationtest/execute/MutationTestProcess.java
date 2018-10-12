@@ -36,6 +36,7 @@ public class MutationTestProcess {
     for (final MutationDetails each : allmutations.allMutations()) {
       final MutationStatusTestPair status = this.thread.getStatus(each.getId());
       if (status != null) {
+        System.out.println("!JB!"+status.getStatus());
         allmutations.setStatusForMutation(each, status);
       }
     }

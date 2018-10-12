@@ -14,16 +14,16 @@
  */
 package org.pitest.mutationtest.engine;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import org.pitest.classinfo.ClassName;
 import org.pitest.coverage.ClassLine;
 import org.pitest.coverage.TestInfo;
 import org.pitest.util.Preconditions;
 import org.pitest.util.StringUtil;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Captures all data relating to a mutant.
@@ -58,7 +58,10 @@ public final class MutationDetails implements Serializable {
     this.poison = poison;
   }
 
-
+  public MutationDetails(MutationDetails old) {
+    this(old.id, old.description, old.filename, old.lineNumber, old.block,
+        old.isInFinallyBlock, old.poison);
+  }
 
   @Override
   public String toString() {

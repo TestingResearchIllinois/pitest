@@ -14,23 +14,21 @@
  */
 package org.pitest.mutationtest;
 
+import org.pitest.functional.FCollection;
+
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 public final class MutationStatusTestPair implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private final int             numberOfTestsRun;
-  private final DetectionStatus status;
+  private int             numberOfTestsRun;
+  private DetectionStatus status;
   private final List<String>    killingTests;
   private final List<String>    succeedingTests;
   private final List<String>    coveringTests;
+  private final HashMap<String, Integer> timesSeen = new HashMap<>();
 
   public MutationStatusTestPair(final int numberOfTestsRun,
       final DetectionStatus status) {
@@ -47,10 +45,16 @@ public final class MutationStatusTestPair implements Serializable {
                                 final DetectionStatus status, final List<String> killingTests,
                                 final List<String> succeedingTests, final List<String> coveringTests) {
     this.status = status;
-    this.killingTests = killingTests;
-    this.succeedingTests = succeedingTests;
+    this.killingTests = new LinkedList<>(killingTests);
+    this.succeedingTests = new LinkedList<>(succeedingTests);
     this.numberOfTestsRun = numberOfTestsRun;
-    this.coveringTests = coveringTests;
+    this.coveringTests = new LinkedList<>(coveringTests);
+
+    HashSet<String> allTests = new HashSet<>(getKillingTests());
+    allTests.addAll(getSucceedingTests());
+    allTests.addAll(getCoveringTests());
+    renameTests(allTests);//initialize counts
+
   }
 
   public void renameTests(String suffix) {
@@ -164,4 +168,59 @@ public final class MutationStatusTestPair implements Serializable {
     return true;
   }
 
+  private int runCount = 0;
+  private String renameTestIfPreviouslySeen(String test){
+    Integer idx = this.timesSeen.putIfAbsent(test,1);
+    if(idx == null)
+      return test;
+    this.timesSeen.put(test,idx+1);
+    if(idx > runCount)
+      runCount = idx;
+    return test+"#"+idx;
+  }
+  private HashMap<String,String> renameTests(Iterable<String> in){
+    HashMap<String,String> ret = new HashMap<>();
+    for(String s : in)
+      if(!ret.containsKey(s))
+        ret.put(s,renameTestIfPreviouslySeen(s));
+    return ret;
+  }
+  private LinkedList<String> remapTests(Iterable<String> in, HashMap<String,String> map) {
+    LinkedList<String> ret = new LinkedList<>();
+    for (String s : in)
+    {
+      ret.add(map.get(s));
+    }
+    return ret;
+  }
+
+  public void accumulate(MutationStatusTestPair status) {
+
+    System.out.println(status.getStatus());
+    System.out.println(status.getSucceedingTests());
+    HashSet<String> allTests = new HashSet<>(status.getKillingTests());
+    allTests.addAll(status.getSucceedingTests());
+    allTests.addAll(status.getCoveringTests());
+    HashMap<String,String> map = renameTests(allTests);
+
+    this.killingTests.addAll(remapTests(status.getKillingTests(), map));
+    this.succeedingTests.addAll(remapTests(status.getSucceedingTests(), map));
+    this.coveringTests.addAll(remapTests(status.getCoveringTests(), map));
+    this.numberOfTestsRun+=status.getNumberOfTestsRun();
+
+    this.status = status.status;
+
+    allTests.removeAll(status.getCoveringTests());
+    if(allTests.size() > 0 && runCount < 10)
+    {
+      //Still not done yet, this test is not determined
+      this.status = DetectionStatus.NOT_TRIED_FULLY;
+    }
+    else
+    {
+      this.status = status.status;
+    }
+
+
+  }
 }
