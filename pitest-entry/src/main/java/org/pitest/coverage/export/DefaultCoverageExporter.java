@@ -65,7 +65,8 @@ public class DefaultCoverageExporter implements CoverageExporter {
     for (final TestInfo test : ts) {
       write(out,
           "<test name='" + StringUtil.escapeBasicHtmlChars(test.getName())
-              + "' hitCount='" + test.getHitCount() + "'/>\n");
+              + "' hitCount='" + test.getHitCount() + "' time='" + test
+              .getTime() + "'/>\n");
     }
     write(out, "</tests>\n");
     write(out, "</block>\n");
