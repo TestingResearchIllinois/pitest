@@ -14,8 +14,6 @@
  */
 package org.pitest.mutationtest;
 
-import org.pitest.functional.FCollection;
-
 import java.io.Serializable;
 import java.util.*;
 
@@ -247,7 +245,11 @@ public final class MutationStatusTestPair implements Serializable {
         this.status = DetectionStatus.SURVIVED_NOT_COVERED;
       else
         this.status = DetectionStatus.UNKNOWN_WEIRD;
-
+      if (status.status == DetectionStatus.MEMORY_ERROR
+          || status.status == DetectionStatus.NON_VIABLE
+          || status.status == DetectionStatus.TIMED_OUT
+          || status.status == DetectionStatus.RUN_ERROR)
+        this.status = status.status;
     }
 
 
