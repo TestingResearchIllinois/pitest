@@ -1,12 +1,39 @@
 package org.pitest.coverage.analysis;
 
+import static org.objectweb.asm.Opcodes.AALOAD;
+import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.ATHROW;
+import static org.objectweb.asm.Opcodes.BALOAD;
+import static org.objectweb.asm.Opcodes.BASTORE;
+import static org.objectweb.asm.Opcodes.CALOAD;
+import static org.objectweb.asm.Opcodes.CASTORE;
+import static org.objectweb.asm.Opcodes.CHECKCAST;
+import static org.objectweb.asm.Opcodes.DALOAD;
+import static org.objectweb.asm.Opcodes.DASTORE;
+import static org.objectweb.asm.Opcodes.DDIV;
 import static org.objectweb.asm.Opcodes.DRETURN;
+import static org.objectweb.asm.Opcodes.FALOAD;
+import static org.objectweb.asm.Opcodes.FASTORE;
+import static org.objectweb.asm.Opcodes.FDIV;
 import static org.objectweb.asm.Opcodes.FRETURN;
+import static org.objectweb.asm.Opcodes.GETFIELD;
+import static org.objectweb.asm.Opcodes.IALOAD;
+import static org.objectweb.asm.Opcodes.IASTORE;
+import static org.objectweb.asm.Opcodes.IDIV;
 import static org.objectweb.asm.Opcodes.IRETURN;
+import static org.objectweb.asm.Opcodes.LALOAD;
+import static org.objectweb.asm.Opcodes.LASTORE;
+import static org.objectweb.asm.Opcodes.LDIV;
 import static org.objectweb.asm.Opcodes.LRETURN;
+import static org.objectweb.asm.Opcodes.MONITORENTER;
+import static org.objectweb.asm.Opcodes.MONITOREXIT;
+import static org.objectweb.asm.Opcodes.NEW;
+import static org.objectweb.asm.Opcodes.NEWARRAY;
+import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.RETURN;
+import static org.objectweb.asm.Opcodes.SALOAD;
+import static org.objectweb.asm.Opcodes.SASTORE;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -96,7 +123,66 @@ public class ControlFlowAnalyser {
   }
 
   private static boolean endsBlock(final AbstractInsnNode ins) {
-    return (ins instanceof JumpInsnNode) || isReturn(ins);
+    return (ins instanceof JumpInsnNode) || isReturn(ins)
+        || isMightThrowException(ins);
+  }
+
+  private static boolean isMightThrowException(AbstractInsnNode ins) {
+    switch (ins.getType()) {
+    case AbstractInsnNode.MULTIANEWARRAY_INSN:
+      return true;
+    case AbstractInsnNode.INSN:
+      switch (ins.getOpcode()) {
+      //division by 0
+      case IDIV:
+      case FDIV:
+      case LDIV:
+      case DDIV:
+        //NPE
+      case MONITORENTER:
+      case MONITOREXIT: //or illegalmonitor
+        //ArrayIndexOutOfBounds or null pointer
+      case IALOAD:
+      case LALOAD:
+      case SALOAD:
+      case DALOAD:
+      case BALOAD:
+      case FALOAD:
+      case CALOAD:
+      case AALOAD:
+      case IASTORE:
+      case LASTORE:
+      case SASTORE:
+      case DASTORE:
+      case BASTORE:
+      case FASTORE:
+      case CASTORE:
+      case AASTORE:
+        return true;
+      default:
+        return false;
+      }
+    case AbstractInsnNode.TYPE_INSN:
+      switch (ins.getOpcode()) {
+      case NEW:
+      case NEWARRAY:
+      case CHECKCAST:
+        return false;
+      }
+    case AbstractInsnNode.FIELD_INSN:
+      switch (ins.getOpcode()) {
+      case GETFIELD:
+      case PUTFIELD:
+        return true;
+      default:
+        return false;
+      }
+    case AbstractInsnNode.METHOD_INSN:
+      return true;
+    default:
+      return false;
+    }
+
   }
 
   private static boolean isReturn(final AbstractInsnNode ins) {
@@ -116,7 +202,8 @@ public class ControlFlowAnalyser {
 
   }
 
-  private static Set<AbstractInsnNode> findJumpTargets(final InsnList instructions) {
+  private static Set<AbstractInsnNode> findJumpTargets(
+      final InsnList instructions) {
     final Set<AbstractInsnNode> jumpTargets = new HashSet<>();
     final ListIterator<AbstractInsnNode> it = instructions.iterator();
     while (it.hasNext()) {
