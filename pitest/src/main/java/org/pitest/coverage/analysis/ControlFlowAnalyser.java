@@ -48,9 +48,11 @@ import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
+import org.objectweb.asm.util.Printer;
 
 public class ControlFlowAnalyser {
 
@@ -59,7 +61,7 @@ public class ControlFlowAnalyser {
   public static List<Block> analyze(final MethodNode mn) {
     final List<Block> blocks = new ArrayList<>(mn.instructions.size());
 
-    final Set<AbstractInsnNode> jumpTargets = findJumpTargets(mn.instructions);
+    final Set<LabelNode> jumpTargets = findJumpTargets(mn.instructions);
 
     // not managed to construct bytecode to show need for this
     // as try catch blocks usually have jumps at their boundaries anyway.
@@ -71,20 +73,32 @@ public class ControlFlowAnalyser {
 
     final int lastInstruction = mn.instructions.size() - 1;
 
+    System.out.println(mn.name + " " + mn.desc);
     int blockStart = 0;
     for (int i = 0; i != mn.instructions.size(); i++) {
 
       final AbstractInsnNode ins = mn.instructions.get(i);
 
+//      if (ins instanceof LineNumberNode)
+//        System.out.println(((LineNumberNode) ins).line);
+//      System.out.println(i + " " + blocks.size() + " " + format(ins));
       if (ins instanceof LineNumberNode) {
         final LineNumberNode lnn = (LineNumberNode) ins;
         blockLines.add(lnn.line);
         lastLine = lnn.line;
       } else if (jumpTargets.contains(ins) && (blockStart != i)) {
+        if (blockLines.isEmpty() && blocks.size() > 0 && !blocks
+            .get(blocks.size() - 1).getLines().isEmpty()) {
+          blockLines.addAll(blocks.get(blocks.size() - 1).getLines());
+        }
         blocks.add(new Block(blockStart, i - 1, blockLines));
         blockStart = i;
         blockLines = smallSet();
       } else if (endsBlock(ins)) {
+        if (blockLines.isEmpty() && blocks.size() > 0 && !blocks
+            .get(blocks.size() - 1).getLines().isEmpty()) {
+          blockLines.addAll(blocks.get(blocks.size() - 1).getLines());
+        }
         blocks.add(new Block(blockStart, i, blockLines));
         blockStart = i + 1;
         blockLines = smallSet();
@@ -92,6 +106,7 @@ public class ControlFlowAnalyser {
         blockLines.add(lastLine);
       }
     }
+
 
     // this will not create a block if the last block contains only a single
     // instruction.
@@ -106,6 +121,15 @@ public class ControlFlowAnalyser {
 
   }
 
+//  private static String format(AbstractInsnNode ins){
+//    if(ins instanceof LineNumberNode)
+//      return "LINE " + ((LineNumberNode) ins).line;
+//    else if(ins instanceof MethodInsnNode)
+//      return Printer.OPCODES[ins.getOpcode()] +  " " + ((MethodInsnNode) ins).owner+"."+((MethodInsnNode) ins).name+((MethodInsnNode) ins).desc;
+//    else if(ins.getOpcode() >= 0)
+//      return Printer.OPCODES[ins.getOpcode()];
+//    return ins.toString();
+//  }
   private static HashSet<Integer> smallSet() {
     return new HashSet<>(LIKELY_NUMBER_OF_LINES_PER_BLOCK);
   }
@@ -115,7 +139,7 @@ public class ControlFlowAnalyser {
   }
 
   private static void addtryCatchBoundaries(final MethodNode mn,
-      final Set<AbstractInsnNode> jumpTargets) {
+      final Set<LabelNode> jumpTargets) {
     for (final Object each : mn.tryCatchBlocks) {
       final TryCatchBlockNode tcb = (TryCatchBlockNode) each;
       jumpTargets.add(tcb.handler);
@@ -127,56 +151,52 @@ public class ControlFlowAnalyser {
         || isMightThrowException(ins);
   }
 
+  private static boolean isMightThrowException(int opcode) {
+    switch (opcode) {
+    //division by 0
+    case IDIV:
+    case FDIV:
+    case LDIV:
+    case DDIV:
+      //NPE
+    case MONITORENTER:
+    case MONITOREXIT: //or illegalmonitor
+      //ArrayIndexOutOfBounds or null pointer
+    case IALOAD:
+    case LALOAD:
+    case SALOAD:
+    case DALOAD:
+    case BALOAD:
+    case FALOAD:
+    case CALOAD:
+    case AALOAD:
+    case IASTORE:
+    case LASTORE:
+    case SASTORE:
+    case DASTORE:
+    case BASTORE:
+    case FASTORE:
+    case CASTORE:
+    case AASTORE:
+    case NEW:
+    case NEWARRAY:
+    case CHECKCAST:
+    case GETFIELD:
+    case PUTFIELD:
+      return true;
+    default:
+      return false;
+    }
+  }
+
   private static boolean isMightThrowException(AbstractInsnNode ins) {
     switch (ins.getType()) {
     case AbstractInsnNode.MULTIANEWARRAY_INSN:
       return true;
     case AbstractInsnNode.INSN:
-      switch (ins.getOpcode()) {
-      //division by 0
-      case IDIV:
-      case FDIV:
-      case LDIV:
-      case DDIV:
-        //NPE
-      case MONITORENTER:
-      case MONITOREXIT: //or illegalmonitor
-        //ArrayIndexOutOfBounds or null pointer
-      case IALOAD:
-      case LALOAD:
-      case SALOAD:
-      case DALOAD:
-      case BALOAD:
-      case FALOAD:
-      case CALOAD:
-      case AALOAD:
-      case IASTORE:
-      case LASTORE:
-      case SASTORE:
-      case DASTORE:
-      case BASTORE:
-      case FASTORE:
-      case CASTORE:
-      case AASTORE:
-        return true;
-      default:
-        return false;
-      }
     case AbstractInsnNode.TYPE_INSN:
-      switch (ins.getOpcode()) {
-      case NEW:
-      case NEWARRAY:
-      case CHECKCAST:
-        return false;
-      }
     case AbstractInsnNode.FIELD_INSN:
-      switch (ins.getOpcode()) {
-      case GETFIELD:
-      case PUTFIELD:
-        return true;
-      default:
-        return false;
-      }
+      return isMightThrowException(ins.getOpcode());
     case AbstractInsnNode.METHOD_INSN:
       return true;
     default:
@@ -202,9 +222,8 @@ public class ControlFlowAnalyser {
 
   }
 
-  private static Set<AbstractInsnNode> findJumpTargets(
-      final InsnList instructions) {
-    final Set<AbstractInsnNode> jumpTargets = new HashSet<>();
+  private static Set<LabelNode> findJumpTargets(final InsnList instructions) {
+    final Set<LabelNode> jumpTargets = new HashSet<>();
     final ListIterator<AbstractInsnNode> it = instructions.iterator();
     while (it.hasNext()) {
       final AbstractInsnNode o = it.next();

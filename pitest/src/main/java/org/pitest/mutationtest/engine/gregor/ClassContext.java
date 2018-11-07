@@ -17,10 +17,10 @@ package org.pitest.mutationtest.engine.gregor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import org.pitest.functional.FCollection;
-import java.util.Optional;
 import org.pitest.mutationtest.engine.MutationDetails;
 import org.pitest.mutationtest.engine.MutationIdentifier;
 import org.pitest.mutationtest.engine.gregor.blocks.BlockCounter;
@@ -107,7 +107,12 @@ class ClassContext implements BlockCounter {
   }
 
   public int getCurrentBlock() {
-    return this.blockCounter.getCurrentBlock();
+    return this.blockCounter.getCurrentBlockThisMethod();
+  }
+
+  @Override
+  public void registerNewMethodStart() {
+    this.blockCounter.registerNewMethodStart();
   }
 
   public boolean isWithinFinallyBlock() {

@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 import org.apache.maven.artifact.Artifact;
@@ -15,8 +17,6 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.pitest.coverage.CoverageSummary;
-import java.util.Optional;
-import java.util.function.Predicate;
 import org.pitest.mutationtest.config.PluginServices;
 import org.pitest.mutationtest.config.ReportOptions;
 import org.pitest.mutationtest.statistics.MutationStatistics;
@@ -24,7 +24,6 @@ import org.pitest.mutationtest.tooling.CombinedStatistics;
 import org.pitest.plugin.ClientClasspathPlugin;
 import org.pitest.plugin.ToolClasspathPlugin;
 import org.slf4j.bridge.SLF4JBridgeHandler;
-
 import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 
 public class AbstractPitMojo extends AbstractMojo {
@@ -54,6 +53,12 @@ public class AbstractPitMojo extends AbstractMojo {
    */
   @Parameter(property = "targetTests")
   protected ArrayList<String>         targetTests;
+
+  /**
+   * Launch minions and configure to wait for remote debugger
+   */
+  @Parameter(property = "debugMinions")
+  private boolean                     debugMinions;
 
   /**
    * Methods not to mutate
@@ -382,6 +387,15 @@ public class AbstractPitMojo extends AbstractMojo {
     RunDecision shouldRun = shouldRun();
 
     if (shouldRun.shouldRun()) {
+
+      if (this.debugMinions) {
+        if (jvmArgs == null) {
+          jvmArgs = new ArrayList<>();
+        }
+        jvmArgs.add(
+            "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000");
+      }
+
       for (final ToolClasspathPlugin each : this.plugins
           .findToolClasspathPlugins()) {
         this.getLog().info("Found plugin : " + each.description());

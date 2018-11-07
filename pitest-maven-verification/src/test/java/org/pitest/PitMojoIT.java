@@ -159,7 +159,9 @@ public class PitMojoIT {
   public void shouldWorkWithPowerMock() throws Exception {
     skipIfJavaVersionNotSupportByThirdParty();
     File testDir = prepare("/pit-powermock");
-    verifier.addCliOption("-DtimeoutConstant=10000");
+    System.out.println(verifier.getLogFileName());
+    verifier.addCliOption("-DtimeoutConstant=10000000");
+    verifier.addCliOption("-Dverbose");
     verifier.executeGoal("test");
     verifier.executeGoal("org.pitest:pitest-maven:mutationCoverage");
 
